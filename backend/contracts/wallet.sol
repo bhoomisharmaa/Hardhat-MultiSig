@@ -30,7 +30,7 @@ contract Wallet {
     // Events
     event InvitationAccepted(address indexed owner);
     event InvitationDeclined(address indexed owner);
-    event TransanctionCreated(
+    event TransactionCreated(
         address indexed sender,
         address indexed recipient,
         uint256 amount,
@@ -109,7 +109,7 @@ contract Wallet {
         txn.ownerToHasApproved[msg.sender] = true;
         s_transactionCount++;
 
-        emit TransanctionCreated(
+        emit TransactionCreated(
             msg.sender,
             recipient,
             amount,
