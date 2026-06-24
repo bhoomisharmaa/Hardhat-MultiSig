@@ -165,6 +165,8 @@ contract Wallet {
             TransactionStatus
         )
     {
+        if (transactionIndex >= s_transactionCount)
+            revert Wallet__InvalidTransactionIndex();
         Transaction storage txn = s_transactions[transactionIndex];
 
         address[] memory ownerWhoHasApproved = new address[](txn.approvals);
