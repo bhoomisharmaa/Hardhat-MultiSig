@@ -141,6 +141,57 @@ contract Wallet {
         emit TransactionApproved(msg.sender, transactionIndex);
     }
 
+    // Getter functions
+    function getApprovalThreshold() external view returns (uint32) {
+        return i_approvalThreshold;
+    }
+
+    function getTransactionCount() external view returns (uint256) {
+        return s_transactionCount;
+    }
+
+    function getTransaction(
+        uint256 transactionIndex
+    )
+        external
+        view
+        returns (
+            address,
+            address,
+            uint256,
+            uint256,
+            uint32,
+            address[] memory,
+            TransactionStatus
+        )
+    {
+        Transaction storage txn = s_transactions[transactionIndex];
+
+        address[] memory ownerWhoHasApproved = new address[](txn.approvals);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < s_owners.length; i++) {
+            if (txn.ownerToHasApproved[s_owners[i]]) {
+                ownerWhoHasApproved[index] = s_owners[i];
+                index++;
+            }
+        }
+
+        return (
+            txn.creator,
+            txn.recipient,
+            txn.amount,
+            txn.index,
+            txn.approvals,
+            ownerWhoHasApproved,
+            txn.status
+        );
+    }
+
+    function getOwnerStatus(address owner) external view returns (OwnerStatus) {
+        return s_ownerToOwnerStatus[owner];
+    }
+
     // Internal functions
     function _createInvitations(address owner) internal {
         if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
