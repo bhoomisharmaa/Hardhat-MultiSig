@@ -194,6 +194,18 @@ contract Wallet {
         return s_ownerToOwnerStatus[owner];
     }
 
+    function getOwners() external view returns (address[] memory) {
+        return s_owners;
+    }
+
+    function getOwnerCount() external view returns (uint256) {
+        return s_owners.length;
+    }
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
     // Internal functions
     function _createInvitations(address owner) internal {
         if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
