@@ -115,4 +115,62 @@ describe("Wallet", function () {
       }
     });
   });
+
+  describe("acceptInvitation", function () {
+    it("should revert if owner is not invited", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner4 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.acceptInvitation(),
+        connectedWallet,
+        "Wallet__OwnerNotInvited",
+      );
+    });
+
+    it("should set the owner status to ACCEPTED", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+
+      equal(await wallet.read.getOwnerStatus([owner1.account.address]), 2);
+    });
+
+    it("should emit event InvitationAccepted", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await viem.assertions.emitWithArgs(
+        await wallet.write.acceptInvitation(),
+        wallet,
+        "InvitationAccepted",
+        [owner1.account.address],
+      );
+    });
+  });
 });
