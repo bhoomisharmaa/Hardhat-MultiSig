@@ -173,4 +173,62 @@ describe("Wallet", function () {
       );
     });
   });
+
+  describe("declineInvitation", function () {
+    it("should revert if owner is not invited", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner4 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.declineInvitation(),
+        connectedWallet,
+        "Wallet__OwnerNotInvited",
+      );
+    });
+
+    it("should set the owner status to DECLINED", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.declineInvitation();
+
+      equal(await wallet.read.getOwnerStatus([owner1.account.address]), 3);
+    });
+
+    it("should emit event InvitationDeclined", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await viem.assertions.emitWithArgs(
+        await wallet.write.declineInvitation(),
+        wallet,
+        "InvitationDeclined",
+        [owner1.account.address],
+      );
+    });
+  });
 });
