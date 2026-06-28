@@ -231,4 +231,137 @@ describe("Wallet", function () {
       );
     });
   });
+
+  describe("createTransaction", function () {
+    it("should revert if caller is not a accepted owner", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.createTransaction([40n, owner4.account.address]),
+        wallet,
+        "Wallet__NotTheOwner",
+      );
+    });
+
+    it("should revert if zero address is passed as recipient", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.createTransaction([
+          40n,
+          "0x0000000000000000000000000000000000000000",
+        ]),
+        wallet,
+        "Wallet__ZeroAddressNotAllowed",
+      );
+    });
+
+    it("should revert if zero is passed as amount", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.createTransaction([0n, owner4.account.address]),
+        wallet,
+        "Wallet__AmountShouldBeGreaterThanZero",
+      );
+    });
+
+    it("should correctly initialize the transaction fields", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+      const transaction = await wallet.read.getTransaction([0n]);
+
+      deepEqual(
+        [
+          getAddress(transaction[0]),
+          getAddress(transaction[1]),
+          transaction[2],
+          transaction[3],
+          transaction[4],
+          transaction[5].map(getAddress),
+          transaction[6],
+        ],
+        [
+          getAddress(owner1.account.address),
+          getAddress(owner4.account.address),
+          40n,
+          0n,
+          1,
+          [getAddress(owner1.account.address)],
+          0,
+        ],
+      );
+    });
+  });
+
+  it("should increment transactionCount", async () => {
+    const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+    const owners = [
+      owner1.account.address,
+      owner2.account.address,
+      owner3.account.address,
+    ];
+
+    const wallet = await viem.deployContract("Wallet", [2, owners]);
+    await wallet.write.acceptInvitation();
+
+    const transactionCount1 = await wallet.read.getTransactionCount();
+
+    await wallet.write.createTransaction([40n, owner4.account.address]);
+
+    const transactionCount2 = await wallet.read.getTransactionCount();
+
+    equal(transactionCount1 + 1n, transactionCount2);
+  });
+
+  it("should emit event TransactionCreated", async () => {
+    const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+    const owners = [
+      owner1.account.address,
+      owner2.account.address,
+      owner3.account.address,
+    ];
+
+    const wallet = await viem.deployContract("Wallet", [2, owners]);
+    await wallet.write.acceptInvitation();
+
+    await viem.assertions.emitWithArgs(
+      await wallet.write.createTransaction([40n, owner4.account.address]),
+      wallet,
+      "TransactionCreated",
+      [owner1.account.address, owner4.account.address, 40n, 0n],
+    );
+  });
 });
