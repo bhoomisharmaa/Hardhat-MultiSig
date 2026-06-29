@@ -2,10 +2,9 @@ import { describe, it } from "node:test";
 import { deepEqual, equal } from "node:assert";
 import hre from "hardhat";
 import artficat from "../artifacts/contracts/Wallet.sol/Wallet.json" with { type: "json" };
-import { type Abi, getAddress, walletActions, zeroAddress } from "viem";
-import { get } from "node:http";
+import { type Abi, getAddress, zeroAddress } from "viem";
 
-const { viem, networkHelpers } = await hre.network.create();
+const { viem } = await hre.network.create();
 const abi = artficat.abi as Abi;
 const abiHolder = { abi, address: zeroAddress };
 
@@ -143,7 +142,7 @@ describe("Wallet", function () {
     });
 
     it("should set the owner status to ACCEPTED", async () => {
-      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
       const owners = [
         owner1.account.address,
         owner2.account.address,
@@ -157,7 +156,7 @@ describe("Wallet", function () {
     });
 
     it("should emit event InvitationAccepted", async () => {
-      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
       const owners = [
         owner1.account.address,
         owner2.account.address,
@@ -201,7 +200,7 @@ describe("Wallet", function () {
     });
 
     it("should set the owner status to DECLINED", async () => {
-      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
       const owners = [
         owner1.account.address,
         owner2.account.address,
@@ -215,7 +214,7 @@ describe("Wallet", function () {
     });
 
     it("should emit event InvitationDeclined", async () => {
-      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
       const owners = [
         owner1.account.address,
         owner2.account.address,
