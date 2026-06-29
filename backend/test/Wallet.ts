@@ -3,6 +3,7 @@ import { deepEqual, equal } from "node:assert";
 import hre from "hardhat";
 import artficat from "../artifacts/contracts/Wallet.sol/Wallet.json" with { type: "json" };
 import { type Abi, getAddress, walletActions, zeroAddress } from "viem";
+import { get } from "node:http";
 
 const { viem, networkHelpers } = await hre.network.create();
 const abi = artficat.abi as Abi;
@@ -361,6 +362,272 @@ describe("Wallet", function () {
         wallet,
         "TransactionCreated",
         [owner1.account.address, owner4.account.address, 40n, 0n],
+      );
+    });
+  });
+
+  describe("approveTransaction", function () {
+    it("should revert if caller is not a accepted owner", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner3 } },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.approveTransaction([0n]),
+        wallet,
+        "Wallet__NotTheOwner",
+      );
+    });
+
+    it("should revert if transactionIndex is greater than transactionCount", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.approveTransaction([4n]),
+        wallet,
+        "Wallet__InvalidTransactionIndex",
+      );
+    });
+
+    it("should revert if the transaction is already executed", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await owner1.sendTransaction({
+        to: wallet.address,
+        value: 50n,
+      });
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+      await connectedWallet2.write.approveTransaction([0n]);
+
+      const connectedWallet3 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner3 } },
+      );
+
+      await connectedWallet3.write.acceptInvitation();
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet3.write.approveTransaction([0n]),
+        wallet,
+        "Wallet__TransactionAlreadyExecuted",
+      );
+    });
+
+    it("reverts when caller has already approved", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await owner1.sendTransaction({
+        to: wallet.address,
+        value: 50n,
+      });
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.approveTransaction([0n]),
+        wallet,
+        "Wallet__OwnerHasAlreadyApproved",
+      );
+    });
+
+    it("should increment transaction approval by one", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [3, owners]);
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+      const txn1 = await wallet.read.getTransaction([0n]);
+
+      await connectedWallet2.write.acceptInvitation();
+      await connectedWallet2.write.approveTransaction([0n]);
+
+      const txn2 = await wallet.read.getTransaction([0n]);
+
+      equal(txn1[4] + 1, txn2[4]);
+    });
+
+    it("should add the owner to the approval array", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+      const ownerWhoWillApprove = [owners[0], owners[1]];
+
+      const wallet = await viem.deployContract("Wallet", [3, owners]);
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+      await connectedWallet2.write.approveTransaction([0n]);
+
+      const txn = await wallet.read.getTransaction([0n]);
+
+      deepEqual(txn[5].map(getAddress), ownerWhoWillApprove.map(getAddress));
+    });
+
+    it("should execute the transaction when number of approvals reaches threshold", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const publicClient = await viem.getPublicClient();
+      await publicClient.getBalance({ address: wallet.address });
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      await owner1.sendTransaction({ to: wallet.address, value: 100n });
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+      await connectedWallet2.write.approveTransaction([0n]);
+
+      const txn = await wallet.read.getTransaction([0n]);
+      const balance = await publicClient.getBalance({
+        address: wallet.address,
+      });
+
+      equal(txn[6], 1);
+      equal(balance, 60n);
+    });
+
+    it("should emit event TransactionExecuted on execution", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+      await owner1.sendTransaction({
+        to: wallet.address,
+        value: 50n,
+      });
+
+      await viem.assertions.emitWithArgs(
+        await connectedWallet2.write.approveTransaction([0n]),
+        wallet,
+        "TransactionExecuted",
+        [0n],
+      );
+    });
+
+    it("should emit event TransactionExecuted on execution", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [3, owners]);
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+
+      await viem.assertions.emitWithArgs(
+        await connectedWallet2.write.approveTransaction([0n]),
+        wallet,
+        "TransactionApproved",
+        [owner2.account.address, 0n],
       );
     });
   });
