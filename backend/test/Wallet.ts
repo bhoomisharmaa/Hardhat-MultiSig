@@ -477,6 +477,34 @@ describe("Wallet", function () {
       );
     });
 
+    it("should revert when wallet does not have enough balance", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner1.account.address,
+        owner2.account.address,
+        owner3.account.address,
+      ];
+
+      const wallet = await viem.deployContract("Wallet", [2, owners]);
+
+      await wallet.write.acceptInvitation();
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet2.write.approveTransaction([0n]),
+        wallet,
+        "Wallet__NotEnoughBalance",
+      );
+    });
+
     it("should increment transaction approval by one", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
       const owners = [
