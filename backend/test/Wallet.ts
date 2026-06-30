@@ -601,7 +601,7 @@ describe("Wallet", function () {
       );
     });
 
-    it("should emit event TransactionExecuted on execution", async () => {
+    it("should emit event TransactionApproved on execution", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
       const owners = [
         owner1.account.address,
