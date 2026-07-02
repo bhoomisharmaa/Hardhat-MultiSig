@@ -43,6 +43,7 @@ contract Wallet {
     );
     event TransactionExecuted(uint256 transactionIndex);
     event OwnerInvited(address indexed owner);
+    event OwnerLeftTheWallet(address indexed owner);
 
     // Errors
     error Wallet__DuplicateOwnersNotAllowed();
@@ -99,6 +100,26 @@ contract Wallet {
             revert Wallet__OwnerNotInvited();
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
         emit InvitationDeclined(msg.sender);
+    }
+
+    function leaveWallet() external {
+        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
+            revert Wallet__NotTheOwner();
+
+        for (uint256 i = 0; i < s_transactionCount; i++) {
+            Transaction storage txn = s_transactions[i];
+            if (
+                txn.ownerToHasApproved[msg.sender] &&
+                txn.status != TransactionStatus.EXECUTED
+            ) {
+                txn.approvals--;
+                txn.ownerToHasApproved[msg.sender] = false;
+            }
+        }
+
+        s_ownerToOwnerStatus[msg.sender] = OwnerStatus.INVALID;
+
+        emit OwnerLeftTheWallet(msg.sender);
     }
 
     function inviteOwner(address owner) external {
