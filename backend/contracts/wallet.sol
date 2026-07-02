@@ -104,11 +104,9 @@ contract Wallet {
     function inviteOwner(address owner) external {
         if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
             revert Wallet__NotTheOwner();
-        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
-        if (s_ownerToOwnerStatus[owner] == OwnerStatus.ACCEPTED)
-            revert Wallet__AlreadyAnOwner();
 
-        s_ownerToOwnerStatus[owner] = OwnerStatus.INVITED;
+        _createInvitations(owner);
+        s_owners.push(owner);
 
         emit OwnerInvited(owner);
     }
