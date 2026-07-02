@@ -38,6 +38,7 @@ contract Wallet {
     );
     event TransactionApproved(address indexed owner, uint256 transactionIndex);
     event TransactionExecuted(uint256 transactionIndex);
+    event OwnerInvited(address indexed owner);
 
     // Errors
     error Wallet__DuplicateOwnersNotAllowed();
@@ -53,6 +54,7 @@ contract Wallet {
     error Wallet__TransactionAlreadyExecuted();
     error Wallet__TransactionFailed();
     error Wallet__NotEnoughBalance();
+    error Wallet__AlreadyAnOwner();
 
     // variables
     uint32 private immutable i_approvalThreshold;
@@ -90,6 +92,18 @@ contract Wallet {
             revert Wallet__OwnerNotInvited();
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
         emit InvitationDeclined(msg.sender);
+    }
+
+    function inviteOwner(address owner) external {
+        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
+            revert Wallet__NotTheOwner();
+        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
+        if (s_ownerToOwnerStatus[owner] == OwnerStatus.ACCEPTED)
+            revert Wallet__AlreadyAnOwner();
+
+        s_ownerToOwnerStatus[owner] = OwnerStatus.INVITED;
+
+        emit OwnerInvited(owner);
     }
 
     function createTransaction(uint256 amount, address recipient) external {
