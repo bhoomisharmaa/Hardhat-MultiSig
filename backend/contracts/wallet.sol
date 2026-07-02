@@ -37,6 +37,10 @@ contract Wallet {
         uint256 transactionIndex
     );
     event TransactionApproved(address indexed owner, uint256 transactionIndex);
+    event TransactionDisapproved(
+        address indexed owner,
+        uint256 transactionIndex
+    );
     event TransactionExecuted(uint256 transactionIndex);
     event OwnerInvited(address indexed owner);
 
@@ -55,6 +59,9 @@ contract Wallet {
     error Wallet__TransactionFailed();
     error Wallet__NotEnoughBalance();
     error Wallet__AlreadyAnOwner();
+    error Wallet__TransactionStatusShouldBePending();
+    error Wallet__TransactionNotApprovedByTheOwner();
+    error Wallet__TransactionDoesNotHaveEnoughApprovals();
 
     // variables
     uint32 private immutable i_approvalThreshold;
@@ -153,6 +160,27 @@ contract Wallet {
         }
 
         emit TransactionApproved(msg.sender, transactionIndex);
+    }
+
+    function disapproveTransaction(uint256 transactionIndex) external {
+        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
+            revert Wallet__NotTheOwner();
+        if (transactionIndex >= s_transactionCount)
+            revert Wallet__InvalidTransactionIndex();
+
+        Transaction storage txn = s_transactions[transactionIndex];
+
+        if (txn.status != TransactionStatus.PENDING)
+            revert Wallet__TransactionStatusShouldBePending();
+        if (!txn.ownerToHasApproved[msg.sender])
+            revert Wallet__TransactionNotApprovedByTheOwner();
+        if (txn.approvals == 0)
+            revert Wallet__TransactionDoesNotHaveEnoughApprovals();
+
+        txn.approvals--;
+        txn.ownerToHasApproved[msg.sender] = false;
+
+        emit TransactionDisapproved(msg.sender, transactionIndex);
     }
 
     // Getter functions
