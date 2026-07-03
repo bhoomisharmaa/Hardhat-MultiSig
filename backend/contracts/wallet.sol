@@ -51,8 +51,6 @@ contract Wallet {
     // Errors
     error Wallet__DuplicateOwnersNotAllowed();
     error Wallet__ZeroAddressNotAllowed();
-    error Wallet__ApprovalThresholdMustBeGreaterThanZero();
-    error Wallet__ApprovalThresholdCannotBeBiggerThanOwnerCount();
     error Wallet__OwnersAreRequired();
     error Wallet__OwnerNotInvited();
     error Wallet__AmountShouldBeGreaterThanZero();
@@ -62,7 +60,6 @@ contract Wallet {
     error Wallet__TransactionAlreadyExecuted();
     error Wallet__TransactionFailed();
     error Wallet__NotEnoughBalance();
-    error Wallet__AlreadyAnOwner();
     error Wallet__TransactionStatusShouldBePending();
     error Wallet__TransactionNotApprovedByTheOwner();
     error Wallet__TransactionDoesNotHaveEnoughApprovals();
