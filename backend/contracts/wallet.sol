@@ -68,7 +68,7 @@ contract Wallet {
     error Wallet__TransactionDoesNotHaveEnoughApprovals();
 
     // variables
-    uint32 private s_approvalThreshold;
+    uint256 private s_approvalThreshold;
     uint256 private s_transactionCount;
     address[] private s_owners;
     mapping(uint256 => Transaction) private s_transactions;
@@ -76,7 +76,6 @@ contract Wallet {
 
     constructor(address[] memory owners) {
         if (owners.length == 0) revert Wallet__OwnersAreRequired();
-
 
         for (uint256 i = 0; i < owners.length; i++) {
             _createInvitations(owners[i]);
@@ -86,7 +85,6 @@ contract Wallet {
         s_owners.push(msg.sender);
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.ACCEPTED;
         s_approvalThreshold = 1;
-
     }
 
     receive() external payable {}
@@ -200,7 +198,7 @@ contract Wallet {
         txn.approvals++;
         txn.ownerToHasApproved[msg.sender] = true;
 
-        if (txn.approvals >= i_approvalThreshold) {
+        if (txn.approvals >= s_approvalThreshold) {
             txn.status = TransactionStatus.EXECUTED;
             _executeTransaction(txn);
         }
@@ -230,8 +228,8 @@ contract Wallet {
     }
 
     // Getter functions
-    function getApprovalThreshold() external view returns (uint32) {
-        return i_approvalThreshold;
+    function getApprovalThreshold() external view returns (uint256) {
+        return s_approvalThreshold;
     }
 
     function getTransactionCount() external view returns (uint256) {
@@ -327,12 +325,14 @@ contract Wallet {
     }
 
     function _calculateApprovalThreshold() internal {
-        uint256 acceptedOwners = 0, len = s_owners.length;
+        uint256 acceptedOwners = 0;
+        uint256 len = s_owners.length;
 
-        for(uint256 i = 0; i < len; i++){
-            if(s_ownerToOwnerStatus[s_owners[i]] == OwnerStatus.ACCEPTED) acceptedOwners++;
+        for (uint256 i = 0; i < len; i++) {
+            if (s_ownerToOwnerStatus[s_owners[i]] == OwnerStatus.ACCEPTED)
+                acceptedOwners++;
         }
 
-        s_approvalThreshold = Math.ceilDiv(acceptedOwners*80,100);
+        s_approvalThreshold = Math.ceilDiv(acceptedOwners * 80, 100);
     }
 }
