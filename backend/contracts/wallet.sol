@@ -77,7 +77,7 @@ contract Wallet {
         _;
     }
 
-    modifier nonInvitedOwner(address owner) {
+    modifier onlyInvitedOwner(address owner) {
         if (s_ownerToOwnerStatus[owner] != OwnerStatus.INVITED)
             revert Wallet__OwnerNotInvited();
         _;
@@ -111,16 +111,16 @@ contract Wallet {
     receive() external payable {}
 
     // External functions
-    function acceptInvitation() external nonInvitedOwner(msg.sender) {
+    function acceptInvitation() external onlyInvitedOwner(msg.sender) {
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.ACCEPTED;
         _calculateApprovalThreshold();
 
         emit InvitationAccepted(msg.sender);
     }
 
-    function declineInvitation() external nonInvitedOwner(msg.sender) {
-        _removeOwnerFromArray(msg.sender);
+    function declineInvitation() external onlyInvitedOwner(msg.sender) {
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
+        _removeOwnerFromArray(msg.sender);
 
         emit InvitationDeclined(msg.sender);
     }
@@ -155,7 +155,7 @@ contract Wallet {
 
     function removeInvitedOwner(
         address owner
-    ) external nonZeroAddress(owner) nonInvitedOwner(owner) onlyAcceptedOwner {
+    ) external nonZeroAddress(owner) onlyInvitedOwner(owner) onlyAcceptedOwner {
         _removeOwnerFromArray(owner);
         s_ownerToOwnerStatus[owner] = OwnerStatus.INVALID;
 
