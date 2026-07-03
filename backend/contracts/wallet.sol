@@ -98,7 +98,10 @@ contract Wallet {
     function declineInvitation() external {
         if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.INVITED)
             revert Wallet__OwnerNotInvited();
+
+        _removeOwnerFromArray(msg.sender);
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
+
         emit InvitationDeclined(msg.sender);
     }
 
@@ -116,6 +119,8 @@ contract Wallet {
                 txn.ownerToHasApproved[msg.sender] = false;
             }
         }
+
+        _removeOwnerFromArray(msg.sender);
 
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.INVALID;
 
@@ -285,5 +290,17 @@ contract Wallet {
         }
 
         emit TransactionExecuted(txn.index);
+    }
+
+    function _removeOwnerFromArray(address owner) internal {
+        uint256 len = s_owners.length;
+
+        for (uint256 i = 0; i < len; i++) {
+            if (s_owners[i] == owner) {
+                s_owners[i] = s_owners[len - 1];
+                s_owners.pop();
+                break;
+            }
+        }
     }
 }
