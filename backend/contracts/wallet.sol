@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 contract Wallet {
     // enums
     enum OwnerStatus {
@@ -66,24 +68,25 @@ contract Wallet {
     error Wallet__TransactionDoesNotHaveEnoughApprovals();
 
     // variables
-    uint32 private immutable i_approvalThreshold;
+    uint32 private s_approvalThreshold;
     uint256 private s_transactionCount;
     address[] private s_owners;
     mapping(uint256 => Transaction) private s_transactions;
     mapping(address => OwnerStatus) private s_ownerToOwnerStatus;
 
-    constructor(uint32 approvalThreshold, address[] memory owners) {
+    constructor(address[] memory owners) {
         if (owners.length == 0) revert Wallet__OwnersAreRequired();
-        if (approvalThreshold == 0)
-            revert Wallet__ApprovalThresholdMustBeGreaterThanZero();
-        if (approvalThreshold > owners.length)
-            revert Wallet__ApprovalThresholdCannotBeBiggerThanOwnerCount();
 
-        i_approvalThreshold = approvalThreshold;
-        s_owners = owners;
+
         for (uint256 i = 0; i < owners.length; i++) {
             _createInvitations(owners[i]);
+            s_owners.push(owners[i]);
         }
+
+        s_owners.push(msg.sender);
+        s_ownerToOwnerStatus[msg.sender] = OwnerStatus.ACCEPTED;
+        s_approvalThreshold = 1;
+
     }
 
     receive() external payable {}
@@ -92,7 +95,10 @@ contract Wallet {
     function acceptInvitation() external {
         if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.INVITED)
             revert Wallet__OwnerNotInvited();
+
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.ACCEPTED;
+        _calculateApprovalThreshold();
+
         emit InvitationAccepted(msg.sender);
     }
 
@@ -124,6 +130,8 @@ contract Wallet {
         _removeOwnerFromArray(msg.sender);
 
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.INVALID;
+
+        _calculateApprovalThreshold();
 
         emit OwnerLeftTheWallet(msg.sender);
     }
@@ -316,5 +324,15 @@ contract Wallet {
                 break;
             }
         }
+    }
+
+    function _calculateApprovalThreshold() internal {
+        uint256 acceptedOwners = 0, len = s_owners.length;
+
+        for(uint256 i = 0; i < len; i++){
+            if(s_ownerToOwnerStatus[s_owners[i]] == OwnerStatus.ACCEPTED) acceptedOwners++;
+        }
+
+        s_approvalThreshold = Math.ceilDiv(acceptedOwners*80,100);
     }
 }
