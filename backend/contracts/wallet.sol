@@ -54,7 +54,7 @@ contract Wallet {
     error Wallet__OwnersAreRequired();
     error Wallet__OwnerNotInvited();
     error Wallet__AmountShouldBeGreaterThanZero();
-    error Wallet__NotTheOwner();
+    error Wallet__NotAnAcceptedOwner();
     error Wallet__InvalidTransactionIndex();
     error Wallet__OwnerHasAlreadyApproved();
     error Wallet__TransactionAlreadyExecuted();
@@ -70,6 +70,30 @@ contract Wallet {
     address[] private s_owners;
     mapping(uint256 => Transaction) private s_transactions;
     mapping(address => OwnerStatus) private s_ownerToOwnerStatus;
+
+    // modifiers
+    modifier nonZeroAddress(address owner) {
+        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
+        _;
+    }
+
+    modifier nonInvitedOwner(address owner) {
+        if (s_ownerToOwnerStatus[owner] != OwnerStatus.INVITED)
+            revert Wallet__OwnerNotInvited();
+        _;
+    }
+
+    modifier onlyAcceptedOwner() {
+        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
+            revert Wallet__NotAnAcceptedOwner();
+        _;
+    }
+
+    modifier validTransactionIndex(uint256 transactionIndex) {
+        if (transactionIndex >= s_transactionCount)
+            revert Wallet__InvalidTransactionIndex();
+        _;
+    }
 
     constructor(address[] memory owners) {
         if (owners.length == 0) revert Wallet__OwnersAreRequired();
@@ -87,30 +111,21 @@ contract Wallet {
     receive() external payable {}
 
     // External functions
-    function acceptInvitation() external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.INVITED)
-            revert Wallet__OwnerNotInvited();
-
+    function acceptInvitation() external nonInvitedOwner(msg.sender) {
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.ACCEPTED;
         _calculateApprovalThreshold();
 
         emit InvitationAccepted(msg.sender);
     }
 
-    function declineInvitation() external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.INVITED)
-            revert Wallet__OwnerNotInvited();
-
+    function declineInvitation() external nonInvitedOwner(msg.sender) {
         _removeOwnerFromArray(msg.sender);
         s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
 
         emit InvitationDeclined(msg.sender);
     }
 
-    function leaveWallet() external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-
+    function leaveWallet() external onlyAcceptedOwner {
         for (uint256 i = 0; i < s_transactionCount; i++) {
             Transaction storage txn = s_transactions[i];
             if (
@@ -131,33 +146,26 @@ contract Wallet {
         emit OwnerLeftTheWallet(msg.sender);
     }
 
-    function inviteOwner(address owner) external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-
+    function inviteOwner(address owner) external onlyAcceptedOwner {
         _createInvitations(owner);
         s_owners.push(owner);
 
         emit OwnerInvited(owner);
     }
 
-    function removeInvitedOwner(address owner) external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
-        if (s_ownerToOwnerStatus[owner] != OwnerStatus.INVITED)
-            revert Wallet__OwnerNotInvited();
-
+    function removeInvitedOwner(
+        address owner
+    ) external nonZeroAddress(owner) nonInvitedOwner(owner) onlyAcceptedOwner {
         _removeOwnerFromArray(owner);
         s_ownerToOwnerStatus[owner] = OwnerStatus.INVALID;
 
         emit InvitedOwnerRemovedFromWallet(owner);
     }
 
-    function createTransaction(uint256 amount, address recipient) external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-        if (recipient == address(0)) revert Wallet__ZeroAddressNotAllowed();
+    function createTransaction(
+        uint256 amount,
+        address recipient
+    ) external nonZeroAddress(recipient) onlyAcceptedOwner {
         if (amount == 0) revert Wallet__AmountShouldBeGreaterThanZero();
 
         uint256 transactionIndex = s_transactionCount;
@@ -179,12 +187,9 @@ contract Wallet {
         );
     }
 
-    function approveTransaction(uint256 transactionIndex) external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-        if (transactionIndex >= s_transactionCount)
-            revert Wallet__InvalidTransactionIndex();
-
+    function approveTransaction(
+        uint256 transactionIndex
+    ) external onlyAcceptedOwner validTransactionIndex(transactionIndex) {
         Transaction storage txn = s_transactions[transactionIndex];
 
         if (txn.status == TransactionStatus.EXECUTED)
@@ -203,12 +208,9 @@ contract Wallet {
         emit TransactionApproved(msg.sender, transactionIndex);
     }
 
-    function disapproveTransaction(uint256 transactionIndex) external {
-        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
-            revert Wallet__NotTheOwner();
-        if (transactionIndex >= s_transactionCount)
-            revert Wallet__InvalidTransactionIndex();
-
+    function disapproveTransaction(
+        uint256 transactionIndex
+    ) external onlyAcceptedOwner validTransactionIndex(transactionIndex) {
         Transaction storage txn = s_transactions[transactionIndex];
 
         if (txn.status != TransactionStatus.PENDING)
@@ -238,6 +240,7 @@ contract Wallet {
     )
         external
         view
+        validTransactionIndex(transactionIndex)
         returns (
             address,
             address,
@@ -248,8 +251,6 @@ contract Wallet {
             TransactionStatus
         )
     {
-        if (transactionIndex >= s_transactionCount)
-            revert Wallet__InvalidTransactionIndex();
         Transaction storage txn = s_transactions[transactionIndex];
 
         address[] memory ownerWhoHasApproved = new address[](txn.approvals);
@@ -290,8 +291,7 @@ contract Wallet {
     }
 
     // Internal functions
-    function _createInvitations(address owner) internal {
-        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
+    function _createInvitations(address owner) internal nonZeroAddress(owner) {
         if (s_ownerToOwnerStatus[owner] != OwnerStatus.INVALID)
             revert Wallet__DuplicateOwnersNotAllowed();
         s_ownerToOwnerStatus[owner] = OwnerStatus.INVITED;
