@@ -44,6 +44,7 @@ contract Wallet {
     event TransactionExecuted(uint256 transactionIndex);
     event OwnerInvited(address indexed owner);
     event OwnerLeftTheWallet(address indexed owner);
+    event InvitedOwnerRemovedFromWallet(address indexed owner);
 
     // Errors
     error Wallet__DuplicateOwnersNotAllowed();
@@ -135,6 +136,19 @@ contract Wallet {
         s_owners.push(owner);
 
         emit OwnerInvited(owner);
+    }
+
+    function removeInvitedOwner(address owner) external {
+        if (s_ownerToOwnerStatus[msg.sender] != OwnerStatus.ACCEPTED)
+            revert Wallet__NotTheOwner();
+        if (owner == address(0)) revert Wallet__ZeroAddressNotAllowed();
+        if (s_ownerToOwnerStatus[owner] != OwnerStatus.INVITED)
+            revert Wallet__OwnerNotInvited();
+
+        _removeOwnerFromArray(owner);
+        s_ownerToOwnerStatus[owner] = OwnerStatus.INVALID;
+
+        emit InvitedOwnerRemovedFromWallet(owner);
     }
 
     function createTransaction(uint256 amount, address recipient) external {
