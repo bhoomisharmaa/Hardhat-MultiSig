@@ -229,31 +229,29 @@ describe("Wallet", function () {
   describe("createTransaction", function () {
     it("should revert if caller is not a accepted owner", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
 
       await viem.assertions.revertWithCustomError(
-        wallet.write.createTransaction([40n, owner4.account.address]),
-        wallet,
+        connectedWallet.write.createTransaction([40n, owner4.account.address]),
+        connectedWallet,
         "Wallet__NotAnAcceptedOwner",
       );
     });
 
     it("should revert if zero address is passed as recipient", async () => {
       const [owner1, owner2, owner3] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.acceptInvitation();
 
       await viem.assertions.revertWithCustomError(
         wallet.write.createTransaction([
@@ -267,14 +265,9 @@ describe("Wallet", function () {
 
     it("should revert if zero is passed as amount", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.acceptInvitation();
 
       await viem.assertions.revertWithCustomError(
         wallet.write.createTransaction([0n, owner4.account.address]),
@@ -285,14 +278,9 @@ describe("Wallet", function () {
 
     it("should correctly initialize the transaction fields", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.acceptInvitation();
 
       await wallet.write.createTransaction([40n, owner4.account.address]);
       const transaction = await wallet.read.getTransaction([0n]);
@@ -321,14 +309,9 @@ describe("Wallet", function () {
 
     it("should increment transactionCount", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.acceptInvitation();
 
       const transactionCount1 = await wallet.read.getTransactionCount();
 
@@ -341,14 +324,9 @@ describe("Wallet", function () {
 
     it("should emit event TransactionCreated", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.acceptInvitation();
 
       await viem.assertions.emitWithArgs(
         await wallet.write.createTransaction([40n, owner4.account.address]),
