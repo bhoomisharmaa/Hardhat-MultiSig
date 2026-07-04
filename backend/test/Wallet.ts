@@ -12,38 +12,15 @@ describe("Wallet", function () {
   describe("constructor", function () {
     it("should revert if owners array is empty", async () => {
       await viem.assertions.revertWithCustomError(
-        viem.deployContract("Wallet", [1, []]),
+        viem.deployContract("Wallet", [[]]),
         abiHolder,
         "Wallet__OwnersAreRequired",
-      );
-    });
-
-    it("should revert if approval threshold is zero", async () => {
-      await viem.assertions.revertWithCustomError(
-        viem.deployContract("Wallet", [
-          0,
-          ["0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199"],
-        ]),
-        abiHolder,
-        "Wallet__ApprovalThresholdMustBeGreaterThanZero",
-      );
-    });
-
-    it("should revert if approval threshold exceeds number of owners", async () => {
-      await viem.assertions.revertWithCustomError(
-        viem.deployContract("Wallet", [
-          4,
-          ["0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199"],
-        ]),
-        abiHolder,
-        "Wallet__ApprovalThresholdCannotBeBiggerThanOwnerCount",
       );
     });
 
     it("should revert if duplicate owners are passed", async () => {
       await viem.assertions.revertWithCustomError(
         viem.deployContract("Wallet", [
-          1,
           [
             "0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199",
             "0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199",
@@ -57,7 +34,6 @@ describe("Wallet", function () {
     it("should revert if zero address is passed as owner", async () => {
       await viem.assertions.revertWithCustomError(
         viem.deployContract("Wallet", [
-          1,
           [
             "0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199",
             "0x0000000000000000000000000000000000000000",
@@ -69,50 +45,53 @@ describe("Wallet", function () {
     });
 
     it("should initialize approval threshold correctly", async () => {
-      const wallet = await viem.deployContract("Wallet", [
-        3,
-        [
-          "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
-          "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
-          "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
-          "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
-        ],
-      ]);
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [
+        owner2.account.address,
+        owner3.account.address,
+        owner4.account.address,
+      ];
 
-      equal(await wallet.read.getApprovalThreshold(), 3);
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      equal(await wallet.read.getApprovalThreshold(), 1);
     });
 
     it("should initialize owners array correctly", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
       const owners = [
-        owner1.account.address,
         owner2.account.address,
         owner3.account.address,
         owner4.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [3, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       const storedOwners = await wallet.read.getOwners();
+      owners.push(owner1.account.address);
 
       deepEqual(storedOwners.map(getAddress), owners.map(getAddress));
     });
 
-    it("should set each owner status to INVITED", async () => {
+    it("should set each owner status to INVITED and deployer to ACCEPTED", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
       const owners = [
-        owner1.account.address,
         owner2.account.address,
         owner3.account.address,
         owner4.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [3, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 3; i++) {
         const ownerStatus = await wallet.read.getOwnerStatus([owners[i]]);
         equal(ownerStatus, 1);
       }
+
+      let deployerStatus = await wallet.read.getOwnerStatus([
+        owner1.account.address,
+      ]);
+      equal(deployerStatus, 2);
     });
   });
 
@@ -125,7 +104,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       const connectedWallet = await viem.getContractAt(
         "Wallet",
         wallet.address,
@@ -149,7 +128,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       equal(await wallet.read.getOwnerStatus([owner1.account.address]), 2);
@@ -163,7 +142,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await viem.assertions.emitWithArgs(
         await wallet.write.acceptInvitation(),
@@ -183,7 +162,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       const connectedWallet = await viem.getContractAt(
         "Wallet",
         wallet.address,
@@ -207,7 +186,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.declineInvitation();
 
       equal(await wallet.read.getOwnerStatus([owner1.account.address]), 3);
@@ -221,7 +200,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await viem.assertions.emitWithArgs(
         await wallet.write.declineInvitation(),
@@ -241,12 +220,12 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await viem.assertions.revertWithCustomError(
         wallet.write.createTransaction([40n, owner4.account.address]),
         wallet,
-        "Wallet__NotTheOwner",
+        "Wallet__NotAnAcceptedOwner",
       );
     });
 
@@ -258,7 +237,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       await viem.assertions.revertWithCustomError(
@@ -279,7 +258,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       await viem.assertions.revertWithCustomError(
@@ -297,7 +276,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       await wallet.write.createTransaction([40n, owner4.account.address]);
@@ -333,7 +312,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       const transactionCount1 = await wallet.read.getTransactionCount();
@@ -353,7 +332,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
 
       await viem.assertions.emitWithArgs(
@@ -374,7 +353,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
 
@@ -387,7 +366,7 @@ describe("Wallet", function () {
       await viem.assertions.revertWithCustomError(
         connectedWallet.write.approveTransaction([0n]),
         wallet,
-        "Wallet__NotTheOwner",
+        "Wallet__NotAnAcceptedOwner",
       );
     });
 
@@ -399,7 +378,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
 
@@ -412,13 +391,9 @@ describe("Wallet", function () {
 
     it("should revert if the transaction is already executed", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await owner1.sendTransaction({
         to: wallet.address,
@@ -460,7 +435,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await owner1.sendTransaction({
         to: wallet.address,
@@ -485,7 +460,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
@@ -513,7 +488,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [3, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
@@ -542,7 +517,7 @@ describe("Wallet", function () {
       ];
       const ownerWhoWillApprove = [owners[0], owners[1]];
 
-      const wallet = await viem.deployContract("Wallet", [3, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
@@ -569,7 +544,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
       const publicClient = await viem.getPublicClient();
       await publicClient.getBalance({ address: wallet.address });
 
@@ -604,7 +579,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [2, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
@@ -637,7 +612,7 @@ describe("Wallet", function () {
         owner3.account.address,
       ];
 
-      const wallet = await viem.deployContract("Wallet", [3, owners]);
+      const wallet = await viem.deployContract("Wallet", [owners]);
 
       await wallet.write.acceptInvitation();
       await wallet.write.createTransaction([40n, owner4.account.address]);
