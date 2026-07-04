@@ -157,13 +157,9 @@ describe("Wallet", function () {
   });
 
   describe("declineInvitation", function () {
-    it("should revert if owner is not invited", async () => {
+    it("should revert if owner is not invited or have already accepted the inviation", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
       const connectedWallet = await viem.getContractAt(
@@ -179,37 +175,53 @@ describe("Wallet", function () {
         connectedWallet,
         "Wallet__OwnerNotInvited",
       );
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.declineInvitation(),
+        wallet,
+        "Wallet__OwnerNotInvited",
+      );
     });
 
     it("should set the owner status to DECLINED", async () => {
       const [owner1, owner2, owner3] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
-      await wallet.write.declineInvitation();
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
 
-      equal(await wallet.read.getOwnerStatus([owner1.account.address]), 3);
+      await connectedWallet.write.declineInvitation();
+
+      equal(
+        await connectedWallet.read.getOwnerStatus([owner2.account.address]),
+        3,
+      );
     });
 
     it("should emit event InvitationDeclined", async () => {
       const [owner1, owner2, owner3] = await viem.getWalletClients();
-      const owners = [
-        owner1.account.address,
-        owner2.account.address,
-        owner3.account.address,
-      ];
+      const owners = [owner2.account.address, owner3.account.address];
 
       const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
 
       await viem.assertions.emitWithArgs(
-        await wallet.write.declineInvitation(),
-        wallet,
+        await connectedWallet.write.declineInvitation(),
+        connectedWallet,
         "InvitationDeclined",
-        [owner1.account.address],
+        [owner2.account.address],
       );
     });
   });
