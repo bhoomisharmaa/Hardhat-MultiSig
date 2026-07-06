@@ -387,8 +387,6 @@ describe("Wallet", function () {
 
       const txn2 = await wallet.read.getTransaction([0n]);
 
-      console.log(txn1);
-      console.log(txn2);
       equal(txn1[4], txn2[4]);
       equal(txn1[6], txn2[6]);
     });
@@ -520,6 +518,100 @@ describe("Wallet", function () {
         wallet,
         "OwnerInvited",
         [owner3.account.address],
+      );
+    });
+  });
+
+  describe("removeInvitedOwner", async () => {
+    it("should revert if zero address is passed as the owner", async () => {
+      const [owner1, owner2] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.removeInvitedOwner([
+          "0x0000000000000000000000000000000000000000",
+        ]),
+        wallet,
+        "Wallet__ZeroAddressNotAllowed",
+      );
+    });
+
+    it("should revert if owner is not an INVITED owner", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.removeInvitedOwner([owner3.account.address]),
+        wallet,
+        "Wallet__OwnerNotInvited",
+      );
+    });
+
+    it("should revert if caller is not an acceptedOwner", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.removeInvitedOwner([owner3.account.address]),
+        connectedWallet,
+        "Wallet__NotAnAcceptedOwner",
+      );
+    });
+
+    it("should remove owner from the array", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      await wallet.write.removeInvitedOwner([owner2.account.address]);
+
+      const ownersArray = await wallet.read.getOwners();
+
+      equal(ownersArray.length, 2);
+    });
+
+    it("should set the owner's status to INVALID", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      await wallet.write.removeInvitedOwner([owner2.account.address]);
+
+      const ownerStatus = await wallet.read.getOwnerStatus([
+        owner2.account.address,
+      ]);
+
+      equal(ownerStatus, 0);
+    });
+
+    it("should emit InvitedOwnerRemovedFromWallet event", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      await viem.assertions.emitWithArgs(
+        wallet.write.removeInvitedOwner([owner2.account.address]),
+        wallet,
+        "InvitedOwnerRemovedFromWallet",
+        [owner2.account.address],
       );
     });
   });
