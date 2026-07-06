@@ -415,6 +415,99 @@ describe("Wallet", function () {
     });
   });
 
+  describe("inviteOwner", function () {
+    it("should revert if caller is not an accepted owner", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.inviteOwner([owner3.account.address]),
+        connectedWallet,
+        "Wallet__NotAnAcceptedOwner",
+      );
+    });
+
+    it("should revert if invited owner is either already invited or is already an accepted owner", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.inviteOwner([owner2.account.address]),
+        wallet,
+        "Wallet__DuplicateOwnersNotAllowed",
+      );
+
+      await connectedWallet.write.acceptInvitation();
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.inviteOwner([owner1.account.address]),
+        connectedWallet,
+        "Wallet__DuplicateOwnersNotAllowed",
+      );
+    });
+
+    it("should set the invited owner's status to INVITED", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await wallet.write.inviteOwner([owner3.account.address]);
+
+      equal(await wallet.read.getOwnerStatus([owner3.account.address]), 1);
+    });
+
+    it("should add the invited owner to the owners array", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await wallet.write.inviteOwner([owner3.account.address]);
+
+      const ownersArray = await wallet.read.getOwners();
+
+      equal(getAddress(ownersArray[2]), getAddress(owner3.account.address));
+    });
+
+    it("should emit OwnerInvited event", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await viem.assertions.emitWithArgs(
+        wallet.write.inviteOwner([owner3.account.address]),
+        wallet,
+        "OwnerInvited",
+        [owner3.account.address],
+      );
+    });
+  });
+
   describe("createTransaction", function () {
     it("should revert if caller is not a accepted owner", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
