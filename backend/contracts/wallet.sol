@@ -8,8 +8,7 @@ contract Wallet {
     enum OwnerStatus {
         INVALID,
         INVITED,
-        ACCEPTED,
-        DECLINED
+        ACCEPTED
     }
 
     enum TransactionStatus {
@@ -119,7 +118,7 @@ contract Wallet {
     }
 
     function declineInvitation() external onlyInvitedOwner(msg.sender) {
-        s_ownerToOwnerStatus[msg.sender] = OwnerStatus.DECLINED;
+        s_ownerToOwnerStatus[msg.sender] = OwnerStatus.INVALID;
         _removeOwnerFromArray(msg.sender);
 
         emit InvitationDeclined(msg.sender);
