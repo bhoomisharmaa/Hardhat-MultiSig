@@ -183,7 +183,7 @@ describe("Wallet", function () {
       );
     });
 
-    it("should set the owner status to DECLINED", async () => {
+    it("should set the owner status to INVALID", async () => {
       const [owner1, owner2, owner3] = await viem.getWalletClients();
       const owners = [owner2.account.address, owner3.account.address];
 
@@ -200,7 +200,7 @@ describe("Wallet", function () {
 
       equal(
         await connectedWallet.read.getOwnerStatus([owner2.account.address]),
-        3,
+        0,
       );
     });
 
