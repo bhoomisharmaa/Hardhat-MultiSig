@@ -466,6 +466,22 @@ describe("Wallet", function () {
       );
     });
 
+    it("should revert if zero address is passed as the invited owner", async () => {
+      const [owner1, owner2] = await viem.getWalletClients();
+
+      const wallet = await viem.deployContract("Wallet", [
+        [owner2.account.address],
+      ]);
+
+      await viem.assertions.revertWithCustomError(
+        wallet.write.inviteOwner([
+          "0x0000000000000000000000000000000000000000",
+        ]),
+        wallet,
+        "Wallet__ZeroAddressNotAllowed",
+      );
+    });
+
     it("should set the invited owner's status to INVITED", async () => {
       const [owner1, owner2, owner3] = await viem.getWalletClients();
 
