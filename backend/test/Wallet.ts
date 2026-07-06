@@ -226,6 +226,195 @@ describe("Wallet", function () {
     });
   });
 
+  describe("leaveWallet", function () {
+    it("should revert if caller is not a accepted owner", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await viem.assertions.revertWithCustomError(
+        connectedWallet.write.leaveWallet(),
+        connectedWallet,
+        "Wallet__NotAnAcceptedOwner",
+      );
+    });
+
+    it("should remove owner from the owner array", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await connectedWallet.write.acceptInvitation();
+      await connectedWallet.write.leaveWallet();
+
+      const walletOwners = await wallet.read.getOwners();
+      let foundOwner2 = false;
+
+      for (let i = 0; i < walletOwners.length; i++) {
+        if (walletOwners[i] == owner2.account.address) {
+          foundOwner2 = true;
+          break;
+        }
+      }
+
+      equal(foundOwner2, false);
+    });
+
+    it("should set owner's status to INVALID", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await connectedWallet.write.acceptInvitation();
+      await connectedWallet.write.leaveWallet();
+
+      const ownerStatus = await wallet.read.getOwnerStatus([
+        owner2.account.address,
+      ]);
+
+      equal(ownerStatus, 0);
+    });
+
+    it("should recalculate approval threshold after leaving", async () => {
+      const [owner1, owner2, owner3, owner4, owner5, owner6] =
+        await viem.getWalletClients();
+      const owners = [
+        owner2.account.address,
+        owner3.account.address,
+        owner4.account.address,
+        owner5.account.address,
+        owner6.account.address,
+      ];
+
+      const ownersWallet = [owner2, owner3, owner4, owner5, owner6];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      for (let i = 0; i < 5; i++) {
+        const connectedWallet = await viem.getContractAt(
+          "Wallet",
+          wallet.address,
+          {
+            client: { wallet: ownersWallet[i] },
+          },
+        );
+
+        await connectedWallet.write.acceptInvitation();
+      }
+
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await connectedWallet.write.leaveWallet();
+      const threshold = await wallet.read.getApprovalThreshold();
+      const calculatedThreshold = Math.ceil((80 * 4) / 100);
+      equal(threshold, BigInt(calculatedThreshold));
+    });
+    it("should recalculate approval threshold after leaving", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      const connectedWallet = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        {
+          client: { wallet: owner2 },
+        },
+      );
+
+      await connectedWallet.write.acceptInvitation();
+      await connectedWallet.write.createTransaction([
+        10n,
+        owner4.account.address,
+      ]);
+      await connectedWallet.write.leaveWallet();
+
+      const txn = await wallet.read.getTransaction([0n]);
+      equal(txn[4], 0);
+    });
+
+    it("should not effect EXECUTED transactions", async () => {
+      const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+
+      await owner1.sendTransaction({ to: wallet.address, value: 100n });
+      await wallet.write.createTransaction([40n, owner4.account.address]);
+
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+      await connectedWallet2.write.approveTransaction([0n]);
+
+      const txn1 = await wallet.read.getTransaction([0n]);
+
+      await connectedWallet2.write.leaveWallet();
+
+      const txn2 = await wallet.read.getTransaction([0n]);
+
+      console.log(txn1);
+      console.log(txn2);
+      equal(txn1[4], txn2[4]);
+      equal(txn1[6], txn2[6]);
+    });
+
+    it("should emit OwnerLeftTheWallet event", async () => {
+      const [owner1, owner2, owner3] = await viem.getWalletClients();
+      const owners = [owner2.account.address, owner3.account.address];
+
+      const wallet = await viem.deployContract("Wallet", [owners]);
+      const connectedWallet2 = await viem.getContractAt(
+        "Wallet",
+        wallet.address,
+        { client: { wallet: owner2 } },
+      );
+
+      await connectedWallet2.write.acceptInvitation();
+
+      await viem.assertions.emitWithArgs(
+        connectedWallet2.write.leaveWallet(),
+        connectedWallet2,
+        "OwnerLeftTheWallet",
+        [owner2.account.address],
+      );
+    });
+  });
+
   describe("createTransaction", function () {
     it("should revert if caller is not a accepted owner", async () => {
       const [owner1, owner2, owner3, owner4] = await viem.getWalletClients();
