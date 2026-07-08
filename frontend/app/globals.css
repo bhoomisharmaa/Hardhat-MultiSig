@@ -1,1 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @import "tailwindcss";
+
+@theme{
+    --font-inter: "Inter", sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* colors */
+    --color-bg: #F7F7F5;
+    --color-surface: #FFFFFF;
+    --color-card: #FFFFFF;
+    --color-border: #E4E4E0;
+    --color-border2: #CCCCC6;
+    --color-text: #111110;
+    --color-sub: #6F6E69;
+    --colorfaint: #B5B3AD;
+    --color-accent: #5746AF;
+    --color-accent-bg: #F0EEF9;
+    --color-go: #1A7F5A;
+    --color-go-bg: #EDFAF4;
+    --color-warn: #A25B00;
+    --color-warn-bg: #FFF5E6;
+    --color-red: #C0392B;
+    --color-red-bg: #FDF0EE;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark{
+     --color-bg: #111110;
+    --color-surface: #1A1A18;
+    --color-card: #1F1F1D;
+    --color-border: #2C2C28;
+    --color-border2: #3A3A36;
+    --color-text: #F2F2EF;
+    --color-sub: #8A8A84;
+    --colorfaint: #4A4A46;
+    --color-accent: #8B78E8;
+    --color-accent-bg: #1E1A30;
+    --color-go: #34C27A;
+    --color-go-bg: #0F2419;
+    --color-warn: #F0A540;
+    --color-warn-bg: #1E1506;
+    --color-red: #E05C4B;
+    --color-red-bg: #200E0C;
+}
+
+body {
+    font-family: var(--font-inter);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+::selection {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+}
+
+::-webkit-scrollbar {width: 6px; height: 6px;}
+::-webkit-scrollbar-track {background: transparent;}
+::-webkit-scrollbar-thumb {background: var(--color-border2); border-radius: 999px;}
+
+@media(prefers-reduced-motion: reduce){
+    *,*::before, *::after{
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
