@@ -1,6 +1,6 @@
 export function HomeSVG() {
   return (
-    <svg viewBox="0 0 16 16" fill="none">
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
       <path
         d="M2 8.5L8 3l6 5.5M3.5 7.5V13h9V7.5"
         stroke="currentColor"
@@ -14,7 +14,7 @@ export function HomeSVG() {
 
 export function TransactionSVG() {
   return (
-    <svg viewBox="0 0 16 16" fill="none">
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
       <rect
         x="2"
         y="3"
@@ -36,7 +36,7 @@ export function TransactionSVG() {
 
 export function PeopleSVG() {
   return (
-    <svg viewBox="0 0 16 16" fill="none">
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
       <circle
         cx="6"
         cy="5.5"
@@ -69,7 +69,7 @@ export function PeopleSVG() {
 
 export function SettingsSVG() {
   return (
-    <svg viewBox="0 0 16 16" fill="none">
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
       <circle
         cx="8"
         cy="8"
