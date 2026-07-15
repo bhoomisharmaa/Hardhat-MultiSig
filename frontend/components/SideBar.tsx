@@ -3,21 +3,10 @@
 import { HomeSVG, PeopleSVG, SettingsSVG, TransactionSVG } from "@/utils/svgs";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { usePathname, useRouter } from "next/navigation";
+import ThemeToggleButton from "./ThemeToggleButton";
 
 export default function SideBar() {
   const router = useRouter();
-
-  const toggleTheme = () => {
-    const isDark = document.documentElement.classList.contains("dark");
-
-    if (isDark) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    }
-  };
 
   const navButtons = [
     { label: "Overview", path: "/", icon: <HomeSVG /> },
@@ -32,12 +21,7 @@ export default function SideBar() {
         <p className="text-base font-bold text-(--color-text) dark:text-(--color-text)">
           Cosign
         </p>
-        <button
-          className="text-[13px] h-6 rounded-md aspect-square border text-(--color-sub) border-(--color-border) dark:text-(--color-sub) dark:border-(--color-border) hover:cursor-pointer hover:text-(--color-text) hover:border-(--color-border2) dark:hover:text-(--color-text) dark:hover:border-(--color-border2)"
-          onClick={toggleTheme}
-        >
-          ◐
-        </button>
+        <ThemeToggleButton />
       </div>
       <nav className="w-full h-fit flex flex-col">
         {navButtons.map((item, index) => {
