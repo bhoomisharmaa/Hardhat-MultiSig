@@ -106,3 +106,26 @@ export function CrossSVG() {
     </svg>
   );
 }
+
+export function LockSvg() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none">
+      <rect
+        x="2"
+        y="5"
+        width="12"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      ></rect>
+      <path
+        d="M5 5V4a3 3 0 016 0v1"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      ></path>
+      <circle cx="8" cy="9" r="1.2" fill="currentColor"></circle>
+    </svg>
+  );
+}
