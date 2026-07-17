@@ -109,7 +109,7 @@ export function CrossSVG() {
 
 export function LockSvg() {
   return (
-    <svg viewBox="0 0 16 16" fill="none">
+    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
       <rect
         x="2"
         y="5"
