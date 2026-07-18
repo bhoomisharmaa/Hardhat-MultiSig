@@ -129,3 +129,43 @@ export function LockSvg() {
     </svg>
   );
 }
+
+export function ShieldCheckSVG() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M8 2L2 5v4c0 3 2.5 5 6 5s6-2 6-5V5L8 2z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      ></path>
+      <path
+        d="M5.5 8l2 2 3-3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></path>
+    </svg>
+  );
+}
+
+export function AdjustemetnsSVG() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+      <circle
+        cx="8"
+        cy="8"
+        r="2.2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      ></circle>
+      <path
+        d="M8 1.5v2M8 12.5v2M14.5 8h-2M3.5 8h-2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      ></path>
+    </svg>
+  );
+}
