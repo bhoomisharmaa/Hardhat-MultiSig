@@ -150,7 +150,7 @@ export function ShieldCheckSVG() {
   );
 }
 
-export function AdjustemetnsSVG() {
+export function AdjustmentsSVG() {
   return (
     <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
       <circle
@@ -162,6 +162,26 @@ export function AdjustemetnsSVG() {
       ></circle>
       <path
         d="M8 1.5v2M8 12.5v2M14.5 8h-2M3.5 8h-2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      ></path>
+    </svg>
+  );
+}
+
+export function ExclamationSVG() {
+  return (
+    <svg className="h-4.5 w-4.5" viewBox="0 0 16 16" fill="none">
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      ></circle>
+      <path
+        d="M8 5v3.5M8 11h.01"
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
