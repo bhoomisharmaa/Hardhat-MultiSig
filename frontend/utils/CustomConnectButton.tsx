@@ -25,7 +25,7 @@ export default function CustomConnectButton({
 
         return (
           <div>
-            {!connected && (
+            {!connected ? (
               <button
                 onClick={openConnectModal}
                 type="button"
@@ -34,26 +34,29 @@ export default function CustomConnectButton({
                 <LockSvg />
                 Connect Wallet
               </button>
-            )}
-            {!ownerStatus ? (
-              <button
-                onClick={openAccountModal}
-                type="button"
-                className="bg-(--color-card) txt-(--color-text) border border-(--color-border) hover:border-(--color-border2) hover:cursor-pointer rounded-md text-[13px] font-semibold px-4.5 py-2"
-              >
-                Disconnect
-              </button>
             ) : (
-              <button
-                onClick={openAccountModal}
-                type="button"
-                className="flex items-center gap-1.5 bg-(--color-bg) border border-(--color-border) rounded-md py-1.5 px-2.5 font-mono text-xs text-(--color-sub)"
-              >
-                <div className="h-1.5 w-1.5 rounded bg-(--color-accent)" />
-                {account?.address.slice(0, 6) +
-                  "…" +
-                  account?.address.slice(-4)}
-              </button>
+              <div>
+                {!ownerStatus ? (
+                  <button
+                    onClick={openAccountModal}
+                    type="button"
+                    className="bg-(--color-card) txt-(--color-text) border border-(--color-border) hover:border-(--color-border2) hover:cursor-pointer rounded-md text-[13px] font-semibold px-4.5 py-2"
+                  >
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    onClick={openAccountModal}
+                    type="button"
+                    className="flex items-center gap-1.5 bg-(--color-bg) border border-(--color-border) rounded-md py-1.5 px-2.5 font-mono text-xs text-(--color-sub)"
+                  >
+                    <div className="h-1.5 w-1.5 rounded bg-(--color-accent)" />
+                    {account?.address.slice(0, 6) +
+                      "…" +
+                      account?.address.slice(-4)}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         );
