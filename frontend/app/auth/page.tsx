@@ -101,7 +101,7 @@ export default function AuthPage() {
   }, [acceptedOwners]);
 
   return (
-    <div className="h-full w-full bg-(--color-bg) dark:bg-(--color-bg)">
+    <div className="h-full w-full dark:bg-(--color-bg)">
       {ownerStatus == 1 ? (
         <Invitation
           contractAddress={contractConfig?.address}
@@ -162,7 +162,7 @@ function Connect({
   connectedUserAddress: Address | undefined;
 }) {
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-(--color-bg)">
       <div className="h-fit w-full bg-(--color-surface) px-6 py-4 flex items-center justify-between border-b border-(--color-border) dark:bg-(--color-surface) dark:border-(--color-border)">
         <span className="text-base text-(--color-text) font-bold tracking-[-0.01rem] dark:text-(--color-text)">
           Cosign
@@ -253,7 +253,7 @@ function Invitation({
   declineInvitation: MouseEventHandler<HTMLButtonElement>;
 }) {
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col bg-(--color-bg)">
       <div className="h-full w-full bg-(--color-surface) px-6 py-4 flex items-center justify-between border-b border-(--color-border) dark:bg-(--color-surface) dark:border-(--color-border)">
         <span className="text-base text-(--color-text) font-bold tracking-[-0.01rem] dark:text-(--color-text)">
           Cosign
