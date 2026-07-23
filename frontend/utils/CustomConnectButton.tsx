@@ -48,7 +48,7 @@ export default function CustomConnectButton({
                   <button
                     onClick={openAccountModal}
                     type="button"
-                    className="flex items-center gap-1.5 bg-(--color-bg) border border-(--color-border) rounded-md py-1.5 px-2.5 font-mono text-xs text-(--color-sub)"
+                    className="flex items-center gap-1.5 bg-(--color-bg) border border-(--color-border) rounded-md py-1.5 px-2.5 font-mono text-xs text-(--color-sub) hover:cursor-pointer hover:border-(--color-border2)"
                   >
                     <div className="h-1.5 w-1.5 rounded bg-(--color-accent)" />
                     {account?.address.slice(0, 6) +
