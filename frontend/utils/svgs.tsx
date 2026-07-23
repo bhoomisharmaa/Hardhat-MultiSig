@@ -189,3 +189,23 @@ export function ExclamationSVG() {
     </svg>
   );
 }
+
+export function UserSVG() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+      <circle
+        cx="8"
+        cy="6"
+        r="2.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      ></circle>
+      <path
+        d="M3 14c.6-2.8 2.4-4.3 5-4.3s4.4 1.5 5 4.3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      ></path>
+    </svg>
+  );
+}
