@@ -96,10 +96,6 @@ export default function AuthPage() {
     calculateAcceptedOwners();
   }, [owners, chainId, contractConfig]);
 
-  useEffect(() => {
-    console.log(acceptedOwners);
-  }, [acceptedOwners]);
-
   return (
     <div className="h-full w-full dark:bg-(--color-bg)">
       {ownerStatus == 1 ? (
