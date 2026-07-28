@@ -16,7 +16,7 @@ export default function SideBar() {
   ];
 
   return (
-    <div className="h-full w-[220px] flex flex-col gap-6 items-start bg-(--color-surface) border-r border-(--color-border) px-4 py-5 dark:bg-(--color-surface) dark:border(--color-border)">
+    <div className="h-screen w-[220px] sticky top-0 overscroll-y-auto flex flex-col gap-6 items-start bg-(--color-surface) border-r border-(--color-border) px-4 py-5 dark:bg-(--color-surface) dark:border(--color-border)">
       <div className="h-fit w-full flex flex-row justify-between">
         <p className="text-base font-bold text-(--color-text) dark:text-(--color-text)">
           Cosign
