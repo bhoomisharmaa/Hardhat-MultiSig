@@ -5,14 +5,15 @@ import {
   useChainId,
   useReadContract,
   useReadContracts,
+  useWriteContract,
 } from "wagmi";
 import SideBar from "../components/SideBar";
-import { useEffect, useState } from "react";
+import { MouseEventHandler, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { wagmiContractConfig } from "@/utils/contractConfig";
 import { config } from "@/utils/wagmiConfig";
 import { CrossSVG } from "@/utils/svgs";
-import { Address, formatEther } from "viem";
+import { Abi, Address, formatEther } from "viem";
 import { useToast } from "@/utils/hooks/useToast";
 
 export default function Home() {
@@ -57,17 +58,20 @@ export default function Home() {
   }, [connectedUserAddress]);
 
   return (
-    <div className="h-screen w-screen">
+    <div className="h-full w-full">
       <div className="h-full w-full flex bg-(--color-bg)">
         <SideBar />
         <Overview
           contractAddress={contractConfig?.address}
+          contractAbi={contractConfig?.abi}
           acceptedOwnerCount={
             statuses?.filter((s) => s.result === 2).length ?? 0
           }
           invitedOwnerCount={
             statuses?.filter((s) => s.result === 1).length ?? 0
           }
+          owners={owners as Address[] | undefined}
+          ownersStatus={statuses?.map((s) => s.result as number)}
         />
       </div>
     </div>
@@ -76,12 +80,18 @@ export default function Home() {
 
 function Overview({
   contractAddress,
+  contractAbi,
   acceptedOwnerCount,
   invitedOwnerCount,
+  owners,
+  ownersStatus,
 }: {
   contractAddress: Address | undefined;
+  contractAbi: Abi | undefined;
   acceptedOwnerCount: number;
   invitedOwnerCount: number;
+  owners: Address[] | undefined;
+  ownersStatus: number[] | undefined;
 }) {
   return (
     <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
@@ -93,7 +103,12 @@ function Overview({
           invitedOwnerCount={invitedOwnerCount}
         />
         <OverviewTransaction />
-        <OverviewOwners />
+        <OverviewOwners
+          owners={owners}
+          ownersStatus={ownersStatus}
+          contractAddress={contractAddress}
+          contractAbi={contractAbi}
+        />
       </div>
     </div>
   );
@@ -269,35 +284,87 @@ function OverviewTransaction() {
   );
 }
 
-function OverviewOwners() {
+function OverviewOwners({
+  owners,
+  ownersStatus,
+  contractAddress,
+  contractAbi,
+}: {
+  owners: Address[] | undefined;
+  ownersStatus: number[] | undefined;
+  contractAddress: Address | undefined;
+  contractAbi: Abi | undefined;
+}) {
+  const { writeContract, isSuccess } = useWriteContract();
+  const { toasts, showToast } = useToast();
+  const router = useRouter();
+
+  const removeInvitedOwner = async (address: Address) => {
+    writeContract({
+      address: contractAddress!,
+      abi: contractAbi!,
+      functionName: "removeInvitedOwner",
+      args: [address],
+    });
+  };
+
+  useEffect(() => {
+    if (isSuccess) showToast("Invitation removed");
+  }, [isSuccess]);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-[.06em] text-(--color-faint)">
           Owners
         </span>
-        <button className="text-xs text-(--color-accent) font-semibold hover:cursor-pointer hover:underline">
+        <button
+          onClick={() => {
+            router.push("./owners");
+          }}
+          className="text-xs text-(--color-accent) font-semibold hover:cursor-pointer hover:underline"
+        >
           Manage
         </button>
       </div>
       <div className="block border border-(--color-border) rounded-lg overflow-hidden bg-(--color-card) font-mono text-[14px] text-(--color-text)">
-        <div className="flex items-center gap-3 px-[14px] py-[18px] border-b border-(--color-border)">
-          <div className="w-2 h-2 rounded bg-(--color-go)" />
-          <span className="flex flex-col">
-            0x4e21…0091
-            <span className="text-[11px] text-(--color-go)">Accpeted</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-3 px-[14px] py-[18px]">
-          <div className="w-2 h-2 rounded bg-(--color-warn)" />
-          <span className="flex flex-col">
-            0x4e21…0091
-            <span className="text-[11px] text-(--color-warn)">Invited</span>
-          </span>
-          <button className="w-7 h-7 rounded-[5px] border border-(--color-border) text-(--color-faint) flex items-center justify-center ml-auto hover:text-(--color-red) hover:border-(--color-red) hover:cursor-pointer">
-            <CrossSVG />
-          </button>
-        </div>
+        {owners?.map((owner, index) => (
+          <div
+            className={`flex items-center gap-3 px-[14px] py-[18px] ${index > 0 ? "border-t border-(--color-border)" : ""}`}
+          >
+            <div
+              className={`w-2 h-2 rounded ${ownersStatus?.[index] === 2 ? "bg-(--color-go)" : "bg-(--color-warn)"}`}
+            />
+            <span className="flex flex-col">
+              {owner}
+              <span
+                className={`text-[11px] ${ownersStatus?.[index] === 2 ? "text-(--color-go)" : "text-(--color-warn)"}`}
+              >
+                {ownersStatus?.[index] === 2 ? "Accepted" : "Invited"}
+              </span>
+            </span>
+            {ownersStatus?.[index] === 1 && (
+              <button
+                onClick={() => {
+                  removeInvitedOwner(owner);
+                }}
+                className="w-7 h-7 rounded-[5px] border border-(--color-border) text-(--color-faint) flex items-center justify-center ml-auto hover:text-(--color-red) hover:border-(--color-red) hover:cursor-pointer"
+              >
+                <CrossSVG />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="fixed bottom-5 right-5 flex flex-col gap-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="bg-(--color-text) text-(--color-surface) text-sm font-semibold px-4 py-3 rounded-lg"
+          >
+            {toast.message}
+          </div>
+        ))}
       </div>
     </div>
   );
