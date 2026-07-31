@@ -4,21 +4,30 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 export default function ProposeTransaction({
   contractAddress,
   contractAbi,
+  showCreateTransactionToast,
+  setIsProposeTransaction,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
+  showCreateTransactionToast: (message: string) => void;
+  setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
 }) {
   const [recipient, setRecipient] = useState<Address>();
   const [amount, setAmount] = useState("");
   const [recipientError, setRecipientError] = useState("");
   const [amountError, setAmountError] = useState("");
 
-  const { writeContract, data: txHash, isPending } = useWriteContract();
+  const {
+    writeContract,
+    data: txHash,
+    isPending,
+    isSuccess: writeContractIsSuccess,
+  } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
   });
@@ -68,6 +77,13 @@ export default function ProposeTransaction({
     });
   };
 
+  useEffect(() => {
+    if (writeContractIsSuccess) {
+      showCreateTransactionToast("Transaction proposed");
+      setIsProposeTransaction(false);
+    }
+  }, [writeContractIsSuccess]);
+
   return (
     <div className="h-screen w-full max-w-[960px] pt-10 pb-20 px-12">
       <div className="h-full w-full flex flex-col items-start gap-9">
@@ -85,7 +101,10 @@ export default function ProposeTransaction({
             <span className="text-(--color-accent) font-bold">1 of 3</span>{" "}
             approvals to execute.
           </p>
-          <form className="w-full flex flex-col gap-4 items-start">
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="w-full flex flex-col gap-4 items-start"
+          >
             <div className="w-full flex flex-col items-start gap-1.5">
               <label
                 className="text-[11.5px] font-semibold text-(--color-sub)"
@@ -100,7 +119,7 @@ export default function ProposeTransaction({
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value as Address)}
                 disabled={isConfirming || isPending}
-                className="w-full bg-(--color-bg) border border-(--color-border) rounded-md px-3 py-2.5 text-(--color-text) font-mono text-[12.5px] focus-visible:outline-2 focus-visible:outline-(--color-accent) focus-visible:outline-offset-2 focus-visible:border-(--color-accent)"
+                className={`w-full bg-(--color-bg) border border-(--color-border) rounded-md px-3 py-2.5 text-(--color-text) font-mono text-[12.5px] ${recipientError ? "outline-2 outline-(--color-red) outline-offset-2 border-(--color-red)" : "focus-visible:outline-2 focus-visible:outline-(--color-accent) focus-visible:outline-offset-2 focus-visible:border-(--color-accent)"} autofill:bg-(--color-bg) autofill:text-(--color-text)`}
               />
               {recipientError && (
                 <p className="text-[12px] font-medium text-(--color-red)">
@@ -122,7 +141,7 @@ export default function ProposeTransaction({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 disabled={isConfirming || isPending}
-                className="w-full bg-(--color-bg) border border-(--color-border) rounded-md px-3 py-2.5 text-(--color-text) font-mono text-[12.5px] focus-visible:outline-2 focus-visible:outline-(--color-accent) focus-visible:outline-offset-2 focus-visible:border-(--color-accent)"
+                className={`w-full bg-(--color-bg) border border-(--color-border) rounded-md px-3 py-2.5 text-(--color-text) font-mono text-[12.5px] ${amountError ? "outline-2 outline-(--color-red) outline-offset-2 border-(--color-red)" : "focus-visible:outline-2 focus-visible:outline-(--color-accent) focus-visible:outline-offset-2 focus-visible:border-(--color-accent)"} autofill:bg-(--color-bg) autofill:text-(--color-text)`}
               />
               {amountError && (
                 <p className="text-[12px] font-medium text-(--color-red)">
