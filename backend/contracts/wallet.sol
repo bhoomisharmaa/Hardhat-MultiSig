@@ -23,6 +23,7 @@ contract Wallet {
         address recipient;
         uint256 amount;
         uint256 index;
+        uint256 thresholdWhenTransactionExecuted;
         uint32 approvals;
         mapping(address => bool) ownerToHasApproved;
         TransactionStatus status;
@@ -176,7 +177,14 @@ contract Wallet {
         txn.recipient = recipient;
         txn.status = TransactionStatus.PENDING;
         txn.ownerToHasApproved[msg.sender] = true;
+        txn.thresholdWhenTransactionExecuted = 0;
         s_transactionCount++;
+
+        if (s_approvalThreshold == 1) {
+            txn.status = TransactionStatus.EXECUTED;
+            txn.thresholdWhenTransactionExecuted = s_approvalThreshold;
+            _executeTransaction(txn);
+        }
 
         emit TransactionCreated(
             msg.sender,
@@ -201,6 +209,7 @@ contract Wallet {
 
         if (txn.approvals >= s_approvalThreshold) {
             txn.status = TransactionStatus.EXECUTED;
+            txn.thresholdWhenTransactionExecuted = s_approvalThreshold;
             _executeTransaction(txn);
         }
 
@@ -245,6 +254,7 @@ contract Wallet {
             address,
             uint256,
             uint256,
+            uint256,
             uint32,
             address[] memory,
             TransactionStatus
@@ -267,6 +277,7 @@ contract Wallet {
             txn.recipient,
             txn.amount,
             txn.index,
+            txn.thresholdWhenTransactionExecuted,
             txn.approvals,
             ownerWhoHasApproved,
             txn.status
