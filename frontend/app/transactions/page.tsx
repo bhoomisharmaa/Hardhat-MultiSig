@@ -15,6 +15,7 @@ import { useToast } from "@/utils/hooks/useToast";
 import { Abi, Address, formatEther } from "viem";
 import { writeContract } from "viem/actions";
 import { TransactionSVG } from "@/utils/svgs";
+import { useRouter } from "next/navigation";
 
 type Transaction = [
   Address,
@@ -29,6 +30,7 @@ type Transaction = [
 
 export default function Transaction() {
   const { address: connectedUserAddress } = useAccount();
+  const router = useRouter();
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
   const [isProposeTransaction, setIsProposeTransaction] = useState(false);
@@ -37,6 +39,14 @@ export default function Transaction() {
     toasts: createTransactionToast,
     showToast: showCreateTransactionToast,
   } = useToast();
+
+  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+    ...contractConfig,
+    functionName: "getOwnerStatus",
+    args: [connectedUserAddress],
+    chainId,
+    query: { enabled: !!connectedUserAddress },
+  });
 
   const { data: threshold, refetch: refetchThreshold } = useReadContract({
     ...contractConfig,
@@ -76,6 +86,12 @@ export default function Transaction() {
   useEffect(() => {
     refetchRawTransactions();
   }, [contractConfig, chainId]);
+
+  useEffect(() => {
+    if (!connectedUserAddress || ownerStatus != 2) {
+      router.replace("/auth");
+    }
+  }, [connectedUserAddress]);
 
   return (
     <div className="h-full w-full">
