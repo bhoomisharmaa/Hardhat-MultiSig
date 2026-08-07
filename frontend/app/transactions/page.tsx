@@ -14,6 +14,7 @@ import ProposeTransaction from "@/utils/ProposeTransaction";
 import { useToast } from "@/utils/hooks/useToast";
 import { Abi, Address, formatEther } from "viem";
 import { writeContract } from "viem/actions";
+import { TransactionSVG } from "@/utils/svgs";
 
 type Transaction = [
   Address,
@@ -92,14 +93,21 @@ export default function Transaction() {
             <div className="flex flex-col gap-10">
               <TransactionHeader
                 setIsProposeTransaction={setIsProposeTransaction}
+                transactionCount={transactionCount as bigint}
               />
-              <TransactionsSection
-                connectedUserAddress={connectedUserAddress}
-                contractAbi={contractConfig?.abi}
-                contractAddress={contractConfig?.address}
-                threshold={threshold as bigint}
-                transactions={transactions}
-              />
+              {transactionCount ? (
+                <TransactionsSection
+                  connectedUserAddress={connectedUserAddress}
+                  contractAbi={contractConfig?.abi}
+                  contractAddress={contractConfig?.address}
+                  threshold={threshold as bigint}
+                  transactions={transactions}
+                />
+              ) : (
+                <NoTransactionsSection
+                  setIsProposeTransaction={setIsProposeTransaction}
+                />
+              )}
             </div>
           </div>
         )}
@@ -120,8 +128,10 @@ export default function Transaction() {
 
 function TransactionHeader({
   setIsProposeTransaction,
+  transactionCount,
 }: {
   setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
+  transactionCount: bigint;
 }) {
   return (
     <div className="flex items-end justify-between">
@@ -133,14 +143,18 @@ function TransactionHeader({
           Transactions
         </h1>
       </div>
-      <button
-        onClick={() => {
-          setIsProposeTransaction(true);
-        }}
-        className="bg-(--color-accent) text-[#fff] text-[13px] font-semibold px-4 py-2 rounded-md hover:cursor-pointer hover:opacity-[.9]"
-      >
-        Propose Transaction
-      </button>
+      {transactionCount ? (
+        <button
+          onClick={() => {
+            setIsProposeTransaction(true);
+          }}
+          className="bg-(--color-accent) text-[#fff] text-[13px] font-semibold px-4 py-2 rounded-md hover:cursor-pointer hover:opacity-[.9]"
+        >
+          Propose Transaction
+        </button>
+      ) : (
+        ""
+      )}
     </div>
   );
 }
@@ -246,6 +260,34 @@ function TransactionsSection({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function NoTransactionsSection({
+  setIsProposeTransaction,
+}: {
+  setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
+}) {
+  return (
+    <div className="max-w-[720px] py-10 px-6 text-center border border-(--color-border2) border-dashed rounded-lg flex flex-col items-center">
+      <div className="p-2.5 border border-(--color-border) rounded-lg text-(--color-faint) mb-3">
+        <TransactionSVG />
+      </div>
+      <span className="text-[14px] font-semibold text-(--color-text)">
+        No transactions yet
+      </span>
+      <span className="text-[12.5px] text-(--color-sub) mb-3.5">
+        Propose a transaction to get started.
+      </span>
+      <button
+        onClick={() => {
+          setIsProposeTransaction(true);
+        }}
+        className="bg-(--color-accent) text-[#fff] text-[13px] font-semibold px-4 py-2 rounded-md hover:cursor-pointer hover:opacity-[.9]"
+      >
+        Propose Transaction
+      </button>
     </div>
   );
 }
