@@ -1,21 +1,19 @@
-import { Abi, Address, formatEther, isAddress, parseEther } from "viem";
-import {
-  useBalance,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
+import { Abi, Address, isAddress } from "viem";
+import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 export default function InviteOwner({
   contractAddress,
   contractAbi,
-  showCreateTransactionToast,
-  setIsProposeTransaction,
+  showInviteOwnerToast,
+  setIsInviteOwner,
+  owners,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
-  showCreateTransactionToast: (message: string) => void;
-  setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
+  showInviteOwnerToast: (message: string) => void;
+  setIsInviteOwner: Dispatch<SetStateAction<boolean>>;
+  owners: Address[] | undefined;
 }) {
   const [address, setAddress] = useState<Address>();
   const [addressError, setAddressError] = useState("");
@@ -30,23 +28,16 @@ export default function InviteOwner({
     hash: txHash,
   });
 
-  const { data: contractBalance } = useBalance({
-    address: contractAddress,
-    blockTag: "latest",
-  });
-
-  const getContractBalanceInETH = () => {
-    return parseFloat(formatEther(contractBalance?.value ?? BigInt(0))).toFixed(
-      3,
-    );
-  };
-
   const validate = () => {
     let valid = true;
+    console.log(owners);
 
     if (!isAddress(address as string)) {
       setAddressError("Enter a valid Ethereum address.");
       valid = false;
+    } else if (owners?.find((add) => add === address)) {
+      valid = false;
+      setAddressError("Owner already invited");
     } else {
       setAddressError("");
     }
@@ -67,8 +58,8 @@ export default function InviteOwner({
 
   useEffect(() => {
     if (writeContractIsSuccess) {
-      showCreateTransactionToast("Transaction proposed");
-      setIsProposeTransaction(false);
+      showInviteOwnerToast("Owner Invited");
+      setIsInviteOwner(false);
     }
   }, [writeContractIsSuccess]);
 

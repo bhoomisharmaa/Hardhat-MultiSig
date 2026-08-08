@@ -62,8 +62,9 @@ export default function Owners() {
           <InviteOwner
             contractAddress={contractConfig?.address}
             contractAbi={contractConfig?.abi}
-            showCreateTransactionToast={showInviteOwnerToast}
-            setIsProposeTransaction={setIsInviteOwner}
+            showInviteOwnerToast={showInviteOwnerToast}
+            setIsInviteOwner={setIsInviteOwner}
+            owners={owners as Address[] | undefined}
           />
         ) : (
           <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
