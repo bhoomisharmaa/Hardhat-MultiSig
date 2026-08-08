@@ -22,6 +22,18 @@ import { CrossSVG } from "@/utils/svgs";
 import { Abi, Address, formatEther } from "viem";
 import { useToast } from "@/utils/hooks/useToast";
 import ProposeTransaction from "@/utils/ProposeTransaction";
+import TransactionsSection from "@/utils/TransactionsSection";
+
+type Transaction = [
+  Address,
+  Address,
+  bigint,
+  bigint,
+  bigint,
+  number,
+  Address[],
+  number,
+];
 
 export default function Home() {
   const { address: connectedUserAddress } = useAccount();
@@ -33,6 +45,7 @@ export default function Home() {
     showToast: showCreateTransactionToast,
   } = useToast();
   const [isProposeTransaction, setIsProposeTransaction] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>();
 
   const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
     ...contractConfig,
@@ -40,6 +53,12 @@ export default function Home() {
     args: [connectedUserAddress],
     chainId,
     query: { enabled: !!connectedUserAddress },
+  });
+
+  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+    ...contractConfig,
+    functionName: "getApprovalThreshold",
+    chainId,
   });
 
   const { data: owners, refetch: refetchOwners } = useReadContract({
@@ -57,10 +76,44 @@ export default function Home() {
     query: { enabled: !!owners && !!contractConfig?.address },
   });
 
+  const { data: transactionCount, refetch: refetchTransactionCount } =
+    useReadContract({
+      ...contractConfig,
+      functionName: "getTransactionCount",
+      chainId,
+    });
+
+  const { data: rawTransactions, refetch: refetchRawTransactions } =
+    useReadContracts({
+      contracts: Array.from(
+        { length: transactionCount ? Number(transactionCount) : 0 },
+        (_, i) => ({
+          ...contractConfig,
+          functionName: "getTransaction",
+          args: [i],
+        }),
+      ),
+      query: { enabled: !!transactionCount && !!contractConfig?.address },
+    });
+
+  useEffect(() => {
+    let tempTransactions = rawTransactions?.map((tx) => {
+      return tx.result as Transaction;
+    });
+
+    tempTransactions = tempTransactions?.filter(
+      (txn) => !txn[6].includes(connectedUserAddress!),
+    );
+
+    setTransactions(tempTransactions);
+  }, [rawTransactions, connectedUserAddress]);
+
   useEffect(() => {
     if (connectedUserAddress) refetchOwnerStatus();
     refetchOwners();
     refetchStatuses();
+    refetchTransactionCount();
+    refetchRawTransactions();
   }, [connectedUserAddress, chainId, contractConfig]);
 
   useEffect(() => {
@@ -93,6 +146,9 @@ export default function Home() {
             owners={owners as Address[] | undefined}
             ownersStatus={statuses?.map((s) => s.result as number)}
             setIsProposeTransaction={setIsProposeTransaction}
+            threshold={threshold as bigint}
+            transactions={transactions}
+            connectedUserAddress={connectedUserAddress}
           />
         )}
         <div className="fixed bottom-5 right-5 flex flex-col gap-2">
@@ -118,6 +174,9 @@ function Overview({
   owners,
   ownersStatus,
   setIsProposeTransaction,
+  transactions,
+  threshold,
+  connectedUserAddress,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
@@ -126,6 +185,9 @@ function Overview({
   owners: Address[] | undefined;
   ownersStatus: number[] | undefined;
   setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
+  transactions: Transaction[] | undefined;
+  threshold: bigint;
+  connectedUserAddress: Address | undefined;
 }) {
   return (
     <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
@@ -140,7 +202,13 @@ function Overview({
           acceptedOwnerCount={acceptedOwnerCount}
           invitedOwnerCount={invitedOwnerCount}
         />
-        <OverviewTransaction />
+        <OverviewTransaction
+          connectedUserAddress={connectedUserAddress}
+          contractAbi={contractAbi}
+          contractAddress={contractAddress}
+          threshold={threshold as bigint}
+          transactions={transactions}
+        />
         <OverviewOwners
           owners={owners}
           ownersStatus={ownersStatus}
@@ -281,52 +349,53 @@ function OverviewCredit({
   );
 }
 
-function OverviewTransaction() {
+function OverviewTransaction({
+  transactions,
+  contractAddress,
+  contractAbi,
+  threshold,
+  connectedUserAddress,
+}: {
+  transactions: Transaction[] | undefined;
+  contractAddress: Address | undefined;
+  contractAbi: Abi | undefined;
+  threshold: bigint;
+  connectedUserAddress: Address | undefined;
+}) {
+  const router = useRouter();
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-[.06em] text-(--color-faint)">
-          Needs your approval — 1
+          Needs your approval — {transactions?.length}
         </span>
-        <button className="text-xs text-(--color-accent) font-semibold hover:cursor-pointer hover:underline">
+        <button
+          onClick={() => {
+            router.push("./transactions");
+          }}
+          className="text-xs text-(--color-accent) font-semibold hover:cursor-pointer hover:underline"
+        >
           View all
         </button>
       </div>
-      <div className="block border border-(--color-border) rounded-lg bg-(--color-card) overflow-hidden px-4.5 py-4">
-        <div className="flex flex-col ">
-          <div className="border-b border-(--color-border) flex flex-col gap-3">
-            <div className="flex items-start justify-between flex-wrap">
-              <div className="flex flex-col gap-1">
-                <span className="font-mono text-(--color-sub) text-[12.5px]">
-                  → 0x7a3f…521c
-                </span>
-                <span className="text-[20px] text-(--color-text) font-bold tracking-[-.02em]">
-                  1.200
-                  <small className="text-xs text-(--color-sub) font-normal ml-1">
-                    ETH
-                  </small>
-                </span>
-              </div>
-              <span className="bg-(--color-accent-bg) text-(--color-accent) text-[11.5px] font-semibold py-[3px] px-[9px] rounded-sm">
-                Ready
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between pt-3">
-            <div className="flex items-center gap-3">
-              <div className="h-[22px] w-[22px] bg-(--color-accent) text-[#fff] text-[10px] font-bold rounded-sm flex items-center justify-center">
-                ✓
-              </div>
-              <span className="text-xs text-(--color-sub)">
-                <span className="text-(--color-text) font-bold">1</span> of 1
-              </span>
-            </div>
-            <button className="text-xs text-(--color-warn) font-semibold px-3 py-1.5 rounded-[5px] bg-(--color-warn-bg) border border-[#0000] hover:border-(--color-warn)">
-              Revoke
-            </button>
-          </div>
+      {transactions?.length ? (
+        <TransactionsSection
+          connectedUserAddress={connectedUserAddress}
+          contractAbi={contractAbi}
+          contractAddress={contractAddress}
+          threshold={threshold as bigint}
+          transactions={transactions}
+        />
+      ) : (
+        <div className="border border-dashed border-(--color-border2) rounded-lg p-8 text-center">
+          <p className="text-sm font-semibold text-(--color-text) mb-1">
+            You're all caught up
+          </p>
+          <p className="text-xs text-(--color-sub)">
+            No transactions waiting for your approval.
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
