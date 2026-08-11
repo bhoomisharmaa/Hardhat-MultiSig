@@ -124,7 +124,7 @@ export default function Home() {
 
   return (
     <div className="h-full w-full">
-      <div className="h-full w-full flex bg-(--color-bg)">
+      <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
         <SideBar />
         {isProposeTransaction ? (
           <ProposeTransaction
@@ -190,7 +190,7 @@ function Overview({
   connectedUserAddress: Address | undefined;
 }) {
   return (
-    <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
+    <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
       <div className="flex flex-col gap-10">
         <OverviewHead
           contractAddress={contractAddress}
@@ -237,23 +237,23 @@ function OverviewHead({
   }
 
   return (
-    <div className="flex items-end justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row items-start sm:justify-between">
       <div className="flex flex-col items-start gap-2">
         <div className="flex items-center gap-1.5 text-[11px] text-(--color-faint) uppercase tracking-[.08rem] font-semibold">
           <div className="h-1 w-1 rounded bg-(--color-go)" />
           Live on Sepolia
         </div>
-        <h1 className="text-[28px] text-(--color-text) font-bold tracking-tight flex flex-col items-start">
+        <h1 className="text-[22px] ml:text-[28px] text-(--color-text) font-bold tracking-tight flex flex-col items-start">
           Overview
           <small className="font-mono text-xs text-(--color-faint) font-normal tracking-normal">
             {contractAddress}
           </small>
         </h1>
       </div>
-      <div className="flex gap-2 flex-wrap">
+      <div className="h-fit flex gap-2">
         <button
           onClick={copyToClipboard}
-          className="bg-(--color-card) text-(--color-text) border border-(--color-border) text-[13px] font-semibold px-4 py-2 rounded-md hover:cursor-pointer hover:border-(--color-border2)"
+          className="w-fit h-fit bg-(--color-card) text-(--color-text) border border-(--color-border) text-[13px] font-semibold px-4 py-2 rounded-md hover:cursor-pointer hover:border-(--color-border2)"
         >
           Copy Address
         </button>
@@ -303,8 +303,8 @@ function OverviewCredit({
   };
 
   return (
-    <div className="grid grid-cols-3 gap-px border border-(--color-border) rounded-lg overflow-hidden">
-      <div className="bg-(--color-card) p-5 flex flex-col items-start gap-2 border-r border-(--color-border)">
+    <div className="grid max-xs:grid-rows-3 min-[480px]:grid-cols-2 ml:grid-cols-3 bg-(--color-border) gap-px border border-(--color-border) rounded-lg overflow-hidden">
+      <div className="bg-(--color-card) p-5 flex flex-col items-start gap-2">
         <span className="text-[11px] text-(--color-faint) uppercase tracking-[.06rem] font-semibold">
           balance
         </span>
@@ -320,7 +320,7 @@ function OverviewCredit({
           <span className="text-xs text-(--color-sub)">{getETHinUSD()}</span>
         </div>
       </div>
-      <div className="bg-(--color-card) p-5 flex flex-col items-start gap-2 border-r border-(--color-border)">
+      <div className="bg-(--color-card) p-5 flex flex-col items-start gap-2">
         <span className="text-[11px] text-(--color-faint) uppercase tracking-[.06rem] font-semibold">
           pending
         </span>
@@ -453,7 +453,7 @@ function OverviewOwners({
               className={`w-2 h-2 rounded ${ownersStatus?.[index] === 2 ? "bg-(--color-go)" : "bg-(--color-warn)"}`}
             />
             <span className="flex flex-col">
-              {owner}
+              {owner.slice(0, 6) + "…" + owner.slice(-4)}
               <span
                 className={`text-[11px] ${ownersStatus?.[index] === 2 ? "text-(--color-go)" : "text-(--color-warn)"}`}
               >
