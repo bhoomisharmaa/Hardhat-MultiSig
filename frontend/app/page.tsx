@@ -237,7 +237,7 @@ function OverviewHead({
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row items-start sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row items-start sm:items-end sm:justify-between">
       <div className="flex flex-col items-start gap-2">
         <div className="flex items-center gap-1.5 text-[11px] text-(--color-faint) uppercase tracking-[.08rem] font-semibold">
           <div className="h-1 w-1 rounded bg-(--color-go)" />
