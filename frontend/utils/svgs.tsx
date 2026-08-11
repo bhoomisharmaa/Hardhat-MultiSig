@@ -202,3 +202,16 @@ export function UserSVG() {
     </svg>
   );
 }
+
+export function SandwhichSVG() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+      <path
+        d="M2 4h12M2 8h12M2 12h12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
