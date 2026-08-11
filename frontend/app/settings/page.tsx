@@ -25,7 +25,7 @@ export default function Settings() {
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
 
   return (
-    <div className="h-full w-full flex flex-col md:flex-row bg-(--color-bg)">
+    <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
       <SideBar />
       <div className="flex-1 min-w-0 w-full max-w-[960px] pt-6 pb-20 px-4 sm:px-8 md:pt-10 md:px-12">
         <div className="flex flex-col gap-8 md:gap-10">
