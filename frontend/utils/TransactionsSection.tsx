@@ -74,7 +74,7 @@ export default function TransactionsSection({
                   </span>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-4">
+              <div className="flex flex-col gap-3 items-start xs:flex-row xs:items-center xs:justify-between pt-4">
                 <div className="flex items-center gap-3">
                   {txn[7] ? (
                     <div className="h-[22px] w-[22px] bg-(--color-accent) text-[#fff] text-[10px] font-bold rounded-sm flex items-center justify-center">
@@ -96,14 +96,14 @@ export default function TransactionsSection({
                   (txn[6].find((address) => address == connectedUserAddress) ? (
                     <button
                       onClick={() => disapproveTransaction(txn[3])}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-[5px]  border border-[#0000] text-(--color-warn) bg-(--color-warn-bg) hover:border-(--color-warn) hover:cursor-pointer"
+                      className="w-fit text-xs font-semibold px-3 py-1.5 rounded-[5px]  border border-[#0000] text-(--color-warn) bg-(--color-warn-bg) hover:border-(--color-warn) hover:cursor-pointer"
                     >
                       Revoke
                     </button>
                   ) : (
                     <button
                       onClick={() => approveTransaction(txn[3])}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-[5px]  border border-[#0000] text-(--color-go) bg-(--color-go-bg) hover:border-(--color-go) hover:cursor-pointer"
+                      className="w-fit text-xs font-semibold px-3 py-1.5 rounded-[5px]  border border-[#0000] text-(--color-go) bg-(--color-go-bg) hover:border-(--color-go) hover:cursor-pointer"
                     >
                       Approve
                     </button>
