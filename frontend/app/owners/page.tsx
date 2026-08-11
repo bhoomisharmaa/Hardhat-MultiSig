@@ -98,7 +98,7 @@ function OwnersHeader({
   setIsInviteOwner: Dispatch<SetStateAction<boolean>>;
 }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row items-start sm:justify-betweenn">
+    <div className="flex flex-col gap-1 sm:flex-row items-start sm:justify-between">
       <div className="flex flex-col items-start gap-1">
         <div className="text-[11px] text-(--color-faint) uppercase tracking-[.08rem] font-semibold">
           co-signers
