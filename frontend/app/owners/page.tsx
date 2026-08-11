@@ -55,40 +55,38 @@ export default function Owners() {
   }, [connectedUserAddress]);
 
   return (
-    <div className="h-full w-full">
-      <div className="h-full w-full flex bg-(--color-bg)">
-        <SideBar />
-        {isInviteOwner ? (
-          <InviteOwner
-            contractAddress={contractConfig?.address}
-            contractAbi={contractConfig?.abi}
-            showInviteOwnerToast={showInviteOwnerToast}
-            setIsInviteOwner={setIsInviteOwner}
-            owners={owners as Address[] | undefined}
-          />
-        ) : (
-          <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
-            <div className="flex flex-col gap-10">
-              <OwnersHeader setIsInviteOwner={setIsInviteOwner} />
-              <Ownersection
-                contractAbi={contractConfig?.abi}
-                contractAddress={contractConfig?.address}
-                owners={owners as Address[] | undefined}
-                ownersStatus={statuses?.map((s) => s.result as number)}
-              />
-            </div>
+    <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
+      <SideBar />
+      {isInviteOwner ? (
+        <InviteOwner
+          contractAddress={contractConfig?.address}
+          contractAbi={contractConfig?.abi}
+          showInviteOwnerToast={showInviteOwnerToast}
+          setIsInviteOwner={setIsInviteOwner}
+          owners={owners as Address[] | undefined}
+        />
+      ) : (
+        <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
+          <div className="flex flex-col gap-10">
+            <OwnersHeader setIsInviteOwner={setIsInviteOwner} />
+            <Ownersection
+              contractAbi={contractConfig?.abi}
+              contractAddress={contractConfig?.address}
+              owners={owners as Address[] | undefined}
+              ownersStatus={statuses?.map((s) => s.result as number)}
+            />
           </div>
-        )}
-        <div className="fixed bottom-5 right-5 flex flex-col gap-2">
-          {inviteOwnerToast.map((toast) => (
-            <div
-              key={toast.id}
-              className="bg-(--color-go) text-white text-sm font-semibold px-4 py-3 rounded-lg"
-            >
-              {toast.message}
-            </div>
-          ))}
         </div>
+      )}
+      <div className="fixed bottom-5 right-5 flex flex-col gap-2">
+        {inviteOwnerToast.map((toast) => (
+          <div
+            key={toast.id}
+            className="bg-(--color-go) text-white text-sm font-semibold px-4 py-3 rounded-lg"
+          >
+            {toast.message}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -100,12 +98,12 @@ function OwnersHeader({
   setIsInviteOwner: Dispatch<SetStateAction<boolean>>;
 }) {
   return (
-    <div className="flex items-end justify-between">
+    <div className="flex flex-col gap-1 sm:flex-row items-start sm:justify-betweenn">
       <div className="flex flex-col items-start gap-1">
         <div className="text-[11px] text-(--color-faint) uppercase tracking-[.08rem] font-semibold">
           co-signers
         </div>
-        <h1 className="text-[28px] text-(--color-text) font-bold tracking-tight">
+        <h1 className="text-[22px] ml:text-[28px] text-(--color-text) font-bold tracking-tight">
           Owners
         </h1>
       </div>
@@ -161,7 +159,7 @@ function Ownersection({
               className={`w-2 h-2 rounded ${ownersStatus?.[index] === 2 ? "bg-(--color-go)" : "bg-(--color-warn)"}`}
             />
             <span className="flex flex-col">
-              {owner}
+              {owner.slice(0, 6) + "…" + owner.slice(-4)}
               <span
                 className={`text-[11px] ${ownersStatus?.[index] === 2 ? "text-(--color-go)" : "text-(--color-warn)"}`}
               >
