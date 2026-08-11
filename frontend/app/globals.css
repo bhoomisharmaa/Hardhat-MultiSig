@@ -6,6 +6,9 @@
     --font-inter: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
+    --breakpoint-ml: 860px;
+    --breakpoint-xs: 480px;
+
     /* colors */
     --color-bg: #F7F7F5;
     --color-surface: #FFFFFF;
