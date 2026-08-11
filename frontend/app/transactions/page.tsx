@@ -95,49 +95,47 @@ export default function Transaction() {
   }, [connectedUserAddress]);
 
   return (
-    <div className="h-full w-full">
-      <div className="h-full w-full flex bg-(--color-bg)">
-        <SideBar />
-        {isProposeTransaction ? (
-          <ProposeTransaction
-            contractAddress={contractConfig?.address}
-            contractAbi={contractConfig?.abi}
-            showCreateTransactionToast={showCreateTransactionToast}
-            setIsProposeTransaction={setIsProposeTransaction}
-          />
-        ) : (
-          <div className="h-full w-full max-w-[960px] pt-10 pb-20 px-12">
-            <div className="flex flex-col gap-10">
-              <TransactionHeader
-                setIsProposeTransaction={setIsProposeTransaction}
-                transactionCount={transactionCount as bigint}
+    <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
+      <SideBar />
+      {isProposeTransaction ? (
+        <ProposeTransaction
+          contractAddress={contractConfig?.address}
+          contractAbi={contractConfig?.abi}
+          showCreateTransactionToast={showCreateTransactionToast}
+          setIsProposeTransaction={setIsProposeTransaction}
+        />
+      ) : (
+        <div className="h-screen w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
+          <div className="flex flex-col gap-7 ml:gap-10">
+            <TransactionHeader
+              setIsProposeTransaction={setIsProposeTransaction}
+              transactionCount={transactionCount as bigint}
+            />
+            {transactionCount ? (
+              <TransactionsSection
+                connectedUserAddress={connectedUserAddress}
+                contractAbi={contractConfig?.abi}
+                contractAddress={contractConfig?.address}
+                threshold={threshold as bigint}
+                transactions={transactions}
               />
-              {transactionCount ? (
-                <TransactionsSection
-                  connectedUserAddress={connectedUserAddress}
-                  contractAbi={contractConfig?.abi}
-                  contractAddress={contractConfig?.address}
-                  threshold={threshold as bigint}
-                  transactions={transactions}
-                />
-              ) : (
-                <NoTransactionsSection
-                  setIsProposeTransaction={setIsProposeTransaction}
-                />
-              )}
-            </div>
+            ) : (
+              <NoTransactionsSection
+                setIsProposeTransaction={setIsProposeTransaction}
+              />
+            )}
           </div>
-        )}
-        <div className="fixed bottom-5 right-5 flex flex-col gap-2">
-          {createTransactionToast.map((toast) => (
-            <div
-              key={toast.id}
-              className="bg-(--color-go) text-white text-sm font-semibold px-4 py-3 rounded-lg"
-            >
-              {toast.message}
-            </div>
-          ))}
         </div>
+      )}
+      <div className="fixed bottom-5 right-5 flex flex-col gap-2">
+        {createTransactionToast.map((toast) => (
+          <div
+            key={toast.id}
+            className="bg-(--color-go) text-white text-sm font-semibold px-4 py-3 rounded-lg"
+          >
+            {toast.message}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -151,12 +149,12 @@ function TransactionHeader({
   transactionCount: bigint;
 }) {
   return (
-    <div className="flex items-end justify-between">
+    <div className="flex flex-col gap-1 sm:flex-row items-start sm:justify-betweenn">
       <div className="flex flex-col items-start gap-1">
         <div className="text-[11px] text-(--color-faint) uppercase tracking-[.08rem] font-semibold">
           Ledger
         </div>
-        <h1 className="text-[28px] text-(--color-text) font-bold tracking-tight">
+        <h1 className="text-[22px] ml:text-[28px] text-(--color-text) font-bold tracking-tight">
           Transactions
         </h1>
       </div>
