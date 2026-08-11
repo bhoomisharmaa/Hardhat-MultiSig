@@ -64,8 +64,8 @@ export default function InviteOwner({
   }, [writeContractIsSuccess]);
 
   return (
-    <div className="h-screen w-full max-w-[960px] pt-10 pb-20 px-12">
-      <div className="h-full w-full flex flex-col items-start gap-9">
+    <div className="h-screen w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12 flex justify-center">
+      <div className="h-full w-fit flex flex-col items-start gap-9">
         <div className="flex flex-col items-start gap-2">
           <span className="text-[11px] text-(--color-faint) uppercase tracking-[.08em] font-semibold">
             new owner
