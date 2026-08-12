@@ -5,6 +5,7 @@ import {
   useChainId,
   useReadContract,
   useReadContracts,
+  useWatchBlockNumber,
   useWriteContract,
 } from "wagmi";
 import SideBar from "../components/SideBar";
@@ -96,6 +97,15 @@ export default function Home() {
       query: { enabled: !!transactionCount && !!contractConfig?.address },
     });
 
+  const refetchData = () => {
+    refetchOwnerStatus();
+    refetchOwners();
+    refetchStatuses();
+    refetchTransactionCount();
+    refetchRawTransactions();
+    refetchThreshold();
+  };
+
   useEffect(() => {
     let tempTransactions = rawTransactions?.map((tx) => {
       return tx.result as Transaction;
@@ -109,18 +119,20 @@ export default function Home() {
   }, [rawTransactions, connectedUserAddress]);
 
   useEffect(() => {
-    if (connectedUserAddress) refetchOwnerStatus();
-    refetchOwners();
-    refetchStatuses();
-    refetchTransactionCount();
-    refetchRawTransactions();
+    refetchData();
   }, [connectedUserAddress, chainId, contractConfig]);
 
   useEffect(() => {
-    if (!connectedUserAddress || ownerStatus != 2) {
+    if (!connectedUserAddress || ownerStatus !== 2) {
       router.push("/auth");
     }
-  }, [connectedUserAddress]);
+  }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
 
   return (
     <div className="h-full w-full">

@@ -5,6 +5,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   useReadContract,
+  useWatchBlockNumber,
 } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,7 +21,7 @@ function shortAddr(address: string) {
 
 export default function Settings() {
   const { address: connectedUserAddress } = useAccount();
-  const router = useRouter();
+
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
 
@@ -42,6 +43,7 @@ export default function Settings() {
             contractAddress={contractConfig?.address}
             chainId={chainId}
             contractAbi={contractConfig?.abi}
+            connectedUserAddress={connectedUserAddress}
           />
 
           <YouSection
@@ -61,11 +63,14 @@ function ContractSection({
   contractAddress,
   contractAbi,
   chainId,
+  connectedUserAddress,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
   chainId: number;
+  connectedUserAddress: Address | undefined;
 }) {
+  const router = useRouter();
   const { data: ownersCount, refetch: refetchOwnersCount } = useReadContract({
     address: contractAddress,
     abi: contractAbi,
@@ -78,6 +83,15 @@ function ContractSection({
     abi: contractAbi,
     functionName: "getApprovalThreshold",
     chainId,
+  });
+
+  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: "getOwnerStatus",
+    args: [connectedUserAddress],
+    chainId,
+    query: { enabled: !!connectedUserAddress },
   });
 
   const rows = [
@@ -95,6 +109,28 @@ function ContractSection({
     { label: "Formula", value: "ceil(accepted × 80%)", mono: true },
     { label: "Total owners", value: `${ownersCount}`, mono: false },
   ];
+
+  const refetchData = () => {
+    refetchOwnersCount();
+    refetchThreshold();
+    refetchOwnerStatus();
+  };
+
+  useEffect(() => {
+    refetchData();
+  }, [contractAddress, contractAbi, chainId]);
+
+  useEffect(() => {
+    if (!connectedUserAddress || ownerStatus != 2) {
+      router.replace("/auth");
+    }
+  }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
 
   return (
     <div className="flex flex-col gap-3">

@@ -16,6 +16,7 @@ import {
   useChainId,
   useReadContract,
   useReadContracts,
+  useWatchBlockNumber,
   useWriteContract,
 } from "wagmi";
 import { config } from "@/utils/wagmiConfig";
@@ -79,18 +80,28 @@ export default function AuthPage() {
     });
   };
 
-  useEffect(() => {
-    if (connectedUserAddress) refetchOwnerStatus();
-    refetchThreshold();
+  const refetchData = () => {
+    refetchOwnerStatus();
     refetchOwners();
+    refetchThreshold();
     refetchStatuses();
-  }, [connectedUserAddress, chainId, contractConfig]);
+  };
+
+  useEffect(() => {
+    refetchData();
+  }, [contractConfig, chainId, connectedUserAddress]);
 
   useEffect(() => {
     if (!!connectedUserAddress && ownerStatus == 2) {
       router.replace("/");
     }
   }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
 
   useEffect(() => {
     calculateAcceptedOwners();

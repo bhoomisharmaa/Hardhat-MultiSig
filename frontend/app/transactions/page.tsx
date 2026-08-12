@@ -6,6 +6,7 @@ import {
   useChainId,
   useReadContract,
   useReadContracts,
+  useWatchBlockNumber,
   useWriteContract,
 } from "wagmi";
 import { config } from "@/utils/wagmiConfig";
@@ -81,18 +82,30 @@ export default function Transaction() {
     });
 
     setTransactions(tempTransactions);
-    console.log(tempTransactions);
   }, [rawTransactions]);
 
-  useEffect(() => {
+  const refetchData = () => {
+    refetchOwnerStatus();
     refetchRawTransactions();
-  }, [contractConfig, chainId]);
+    refetchThreshold();
+    refetchTransactionCount();
+  };
+
+  useEffect(() => {
+    refetchData();
+  }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
     if (!connectedUserAddress || ownerStatus != 2) {
       router.replace("/auth");
     }
-  }, [connectedUserAddress]);
+  }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
 
   return (
     <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">

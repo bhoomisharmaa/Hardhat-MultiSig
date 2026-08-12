@@ -12,6 +12,7 @@ import {
   useChainId,
   useReadContract,
   useReadContracts,
+  useWatchBlockNumber,
   useWriteContract,
 } from "wagmi";
 import InviteOwner from "@/utils/InviteOwner";
@@ -48,11 +49,27 @@ export default function Owners() {
     query: { enabled: !!owners && !!contractConfig?.address },
   });
 
+  const refetchData = () => {
+    refetchOwnerStatus();
+    refetchOwners();
+    refetchStatuses();
+  };
+
+  useEffect(() => {
+    refetchData();
+  }, [connectedUserAddress, contractConfig, chainId]);
+
   useEffect(() => {
     if (!connectedUserAddress || ownerStatus != 2) {
       router.replace("/auth");
     }
-  }, [connectedUserAddress]);
+  }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
 
   return (
     <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
