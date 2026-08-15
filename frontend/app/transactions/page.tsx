@@ -112,7 +112,7 @@ export default function Transaction() {
   }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
-    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+    if ((!isLoadingOwnerStatus && ownerStatus !== 2) || !connectedUserAddress) {
       router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
@@ -122,7 +122,7 @@ export default function Transaction() {
       refetchData();
     },
   });
-  if (!contractConfig || !ownerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus) {
     return <Loading />;
   }
 
