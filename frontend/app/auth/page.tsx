@@ -31,7 +31,11 @@ export default function AuthPage() {
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
   const { writeContract } = useWriteContract();
 
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+  const {
+    data: ownerStatus,
+    refetch: refetchOwnerStatus,
+    isLoading: isLoadingOwnerStatus,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerStatus",
     args: [connectedUserAddress],
@@ -39,19 +43,31 @@ export default function AuthPage() {
     query: { enabled: !!connectedUserAddress },
   });
 
-  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+  const {
+    data: threshold,
+    refetch: refetchThreshold,
+    isLoading: isLoadingThreshold,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getApprovalThreshold",
     chainId,
   });
 
-  const { data: owners, refetch: refetchOwners } = useReadContract({
+  const {
+    data: owners,
+    refetch: refetchOwners,
+    isLoading: isLoadingOwners,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwners",
     chainId,
   });
 
-  const { data: statuses, refetch: refetchStatuses } = useReadContracts({
+  const {
+    data: statuses,
+    refetch: refetchStatuses,
+    isLoading: isLoadingStatuses,
+  } = useReadContracts({
     contracts: ((owners as Address[]) ?? []).map((owner) => ({
       ...contractConfig,
       functionName: "getOwnerStatus",
@@ -108,7 +124,13 @@ export default function AuthPage() {
     calculateAcceptedOwners();
   }, [owners, chainId, contractConfig]);
 
-  if (!contractConfig) {
+  if (
+    !contractConfig ||
+    isLoadingOwnerStatus ||
+    isLoadingOwners ||
+    isLoadingStatuses ||
+    isLoadingThreshold
+  ) {
     return <Loading />;
   }
 
