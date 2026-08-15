@@ -25,6 +25,7 @@ import { useToast } from "@/utils/hooks/useToast";
 import ProposeTransaction from "@/utils/ProposeTransaction";
 import TransactionsSection from "@/utils/TransactionsSection";
 import Loading from "@/components/Loading";
+import SkelBar from "@/utils/SkelBar";
 
 type Transaction = [
   Address,
@@ -49,7 +50,11 @@ export default function Home() {
   const [isProposeTransaction, setIsProposeTransaction] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>();
 
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+  const {
+    data: ownerStatus,
+    refetch: refetchOwnerStatus,
+    isLoading: isLoadingOwnerStatus,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerStatus",
     args: [connectedUserAddress],
@@ -57,19 +62,31 @@ export default function Home() {
     query: { enabled: !!connectedUserAddress },
   });
 
-  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+  const {
+    data: threshold,
+    refetch: refetchThreshold,
+    isLoading: isLoadingThreshold,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getApprovalThreshold",
     chainId,
   });
 
-  const { data: owners, refetch: refetchOwners } = useReadContract({
+  const {
+    data: owners,
+    refetch: refetchOwners,
+    isLoading: isLoadingOwners,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwners",
     chainId,
   });
 
-  const { data: statuses, refetch: refetchStatuses } = useReadContracts({
+  const {
+    data: statuses,
+    refetch: refetchStatuses,
+    isLoading: isLoadingStatuses,
+  } = useReadContracts({
     contracts: ((owners as Address[]) ?? []).map((owner) => ({
       ...contractConfig,
       functionName: "getOwnerStatus",
@@ -78,25 +95,31 @@ export default function Home() {
     query: { enabled: !!owners && !!contractConfig?.address },
   });
 
-  const { data: transactionCount, refetch: refetchTransactionCount } =
-    useReadContract({
-      ...contractConfig,
-      functionName: "getTransactionCount",
-      chainId,
-    });
+  const {
+    data: transactionCount,
+    refetch: refetchTransactionCount,
+    isLoading: isLoadingTransactionCount,
+  } = useReadContract({
+    ...contractConfig,
+    functionName: "getTransactionCount",
+    chainId,
+  });
 
-  const { data: rawTransactions, refetch: refetchRawTransactions } =
-    useReadContracts({
-      contracts: Array.from(
-        { length: transactionCount ? Number(transactionCount) : 0 },
-        (_, i) => ({
-          ...contractConfig,
-          functionName: "getTransaction",
-          args: [i],
-        }),
-      ),
-      query: { enabled: !!transactionCount && !!contractConfig?.address },
-    });
+  const {
+    data: rawTransactions,
+    refetch: refetchRawTransactions,
+    isLoading: isLoadingRawTransactions,
+  } = useReadContracts({
+    contracts: Array.from(
+      { length: transactionCount ? Number(transactionCount) : 0 },
+      (_, i) => ({
+        ...contractConfig,
+        functionName: "getTransaction",
+        args: [i],
+      }),
+    ),
+    query: { enabled: !!transactionCount && !!contractConfig?.address },
+  });
 
   const refetchData = () => {
     refetchOwnerStatus();
@@ -166,6 +189,13 @@ export default function Home() {
             threshold={threshold as bigint}
             transactions={transactions}
             connectedUserAddress={connectedUserAddress}
+            isLoading={
+              isLoadingOwners ||
+              isLoadingStatuses ||
+              isLoadingRawTransactions ||
+              isLoadingThreshold ||
+              isLoadingTransactionCount
+            }
           />
         )}
         <div className="fixed bottom-5 right-5 flex flex-col gap-2">
@@ -194,6 +224,7 @@ function Overview({
   transactions,
   threshold,
   connectedUserAddress,
+  isLoading,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
@@ -205,6 +236,7 @@ function Overview({
   transactions: Transaction[] | undefined;
   threshold: bigint;
   connectedUserAddress: Address | undefined;
+  isLoading: boolean;
 }) {
   return (
     <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
@@ -214,24 +246,34 @@ function Overview({
           contractAbi={contractAbi}
           setIsProposeTransaction={setIsProposeTransaction}
         />
-        <OverviewCredit
-          contractAddress={contractAddress}
-          acceptedOwnerCount={acceptedOwnerCount}
-          invitedOwnerCount={invitedOwnerCount}
-        />
-        <OverviewTransaction
-          connectedUserAddress={connectedUserAddress}
-          contractAbi={contractAbi}
-          contractAddress={contractAddress}
-          threshold={threshold as bigint}
-          transactions={transactions}
-        />
-        <OverviewOwners
-          owners={owners}
-          ownersStatus={ownersStatus}
-          contractAddress={contractAddress}
-          contractAbi={contractAbi}
-        />
+        {isLoading ? (
+          <>
+            <OverviewCreditLoading />
+            <OverviewTransactionLoading />
+            <OverviewOwnersLoading />
+          </>
+        ) : (
+          <>
+            <OverviewCredit
+              contractAddress={contractAddress}
+              acceptedOwnerCount={acceptedOwnerCount}
+              invitedOwnerCount={invitedOwnerCount}
+            />
+            <OverviewTransaction
+              connectedUserAddress={connectedUserAddress}
+              contractAbi={contractAbi}
+              contractAddress={contractAddress}
+              threshold={threshold as bigint}
+              transactions={transactions}
+            />
+            <OverviewOwners
+              owners={owners}
+              ownersStatus={ownersStatus}
+              contractAddress={contractAddress}
+              contractAbi={contractAbi}
+            />
+          </>
+        )}
       </div>
     </div>
   );
@@ -306,7 +348,7 @@ function OverviewCredit({
   acceptedOwnerCount: number;
   invitedOwnerCount: number;
 }) {
-  const { data: contractBalance } = useBalance({
+  const { data: contractBalance, isLoading: isLoadingBalance } = useBalance({
     address: contractAddress,
     blockTag: "latest",
   });
@@ -497,6 +539,86 @@ function OverviewOwners({
             className="bg-(--color-text) text-(--color-surface) text-sm font-semibold px-4 py-3 rounded-lg"
           >
             {toast.message}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OverviewCreditLoading() {
+  return (
+    <div className="grid max-xs:grid-rows-3 min-[480px]:grid-cols-2 ml:grid-cols-3 bg-(--color-border) gap-px border border-(--color-border) rounded-lg overflow-hidden">
+      {[
+        { label: "Balance", valueW: "w-[70px]", subW: "w-20" },
+        { label: "Pending", valueW: "w-4", subW: "w-[70px]" },
+        { label: "Owners", valueW: "w-9", subW: "w-12" },
+      ].map((stat) => (
+        <div
+          key={stat.label}
+          className="bg-(--color-card) p-5 flex flex-col gap-2.5"
+        >
+          <div className="text-[11px] text-(--color-faint) uppercase tracking-[.06rem] font-semibold">
+            {stat.label}
+          </div>
+          <SkelBar className={`${stat.valueW} h-[22px]`} />
+          <SkelBar className={`${stat.subW} h-[11px]`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OverviewTransactionLoading() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11px] font-bold uppercase tracking-[.06rem] text-(--color-faint)">
+        Needs your approval
+      </div>
+      <div className="border border-(--color-border) rounded-lg overflow-hidden bg-(--color-card) font-mono text-[14px]">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className={`flex flex-col gap-3 px-[18px] py-4 ${i > 0 ? "border-t border-(--color-border)" : ""}`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1.5">
+                <SkelBar className="w-[88px] h-[11px]" />
+                <SkelBar className="w-16 h-[19px]" />
+              </div>
+              <SkelBar className="w-[58px] h-5 rounded" />
+            </div>
+            <div className="flex gap-3 items-center xs:justify-between pt-3 border-t border-(--color-border)">
+              <div className="flex gap-1">
+                <div className="w-[22px] h-[22px] rounded bg-(--color-bg) border border-(--color-border)" />
+                <div className="w-[22px] h-[22px] rounded bg-(--color-bg) border border-(--color-border)" />
+              </div>
+              <SkelBar className="w-[46px] h-[11px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OverviewOwnersLoading() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11px] font-bold uppercase tracking-[.06rem] text-(--color-faint)">
+        Owners
+      </div>
+      <div className="border border-(--color-border) rounded-lg overflow-hidden bg-(--color-card) font-mono text-[14px]">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-3 px-[14px] py-[18px] ${i > 0 ? "border-t border-(--color-border)" : ""}`}
+          >
+            <div className="w-2 h-2 rounded bg-(--color-border) animate-pulse" />
+            <div className="flex flex-col gap-1.5">
+              <SkelBar className="w-[120px] h-[13px]" />
+              <SkelBar className="w-[50px] h-[11px]" />
+            </div>
           </div>
         ))}
       </div>
