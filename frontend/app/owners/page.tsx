@@ -17,6 +17,7 @@ import {
 } from "wagmi";
 import InviteOwner from "@/utils/InviteOwner";
 import Loading from "@/components/Loading";
+import SkelBar from "@/utils/SkelBar";
 
 export default function Owners() {
   const { address: connectedUserAddress } = useAccount();
@@ -27,7 +28,11 @@ export default function Owners() {
   const { toasts: inviteOwnerToast, showToast: showInviteOwnerToast } =
     useToast();
 
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+  const {
+    data: ownerStatus,
+    refetch: refetchOwnerStatus,
+    isLoading: isLoadingOwnerStatus,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerStatus",
     args: [connectedUserAddress],
@@ -35,13 +40,21 @@ export default function Owners() {
     query: { enabled: !!connectedUserAddress },
   });
 
-  const { data: owners, refetch: refetchOwners } = useReadContract({
+  const {
+    data: owners,
+    refetch: refetchOwners,
+    isLoading: isLoadingOwners,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwners",
     chainId,
   });
 
-  const { data: statuses, refetch: refetchStatuses } = useReadContracts({
+  const {
+    data: statuses,
+    refetch: refetchStatuses,
+    isLoading: isLoadingStatuses,
+  } = useReadContracts({
     contracts: ((owners as Address[]) ?? []).map((owner) => ({
       ...contractConfig,
       functionName: "getOwnerStatus",
@@ -61,7 +74,7 @@ export default function Owners() {
   }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
-    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+    if ((!isLoadingOwnerStatus && ownerStatus !== 2) || !connectedUserAddress) {
       router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
@@ -72,7 +85,7 @@ export default function Owners() {
     },
   });
 
-  if (!contractConfig || !ownerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus) {
     return <Loading />;
   }
 
@@ -91,12 +104,16 @@ export default function Owners() {
         <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
           <div className="flex flex-col gap-10">
             <OwnersHeader setIsInviteOwner={setIsInviteOwner} />
-            <Ownersection
-              contractAbi={contractConfig?.abi}
-              contractAddress={contractConfig?.address}
-              owners={owners as Address[] | undefined}
-              ownersStatus={statuses?.map((s) => s.result as number)}
-            />
+            {isLoadingOwners || isLoadingStatuses ? (
+              <OwnersLoading />
+            ) : (
+              <Ownersection
+                contractAbi={contractConfig?.abi}
+                contractAddress={contractConfig?.address}
+                owners={owners as Address[] | undefined}
+                ownersStatus={statuses?.map((s) => s.result as number)}
+              />
+            )}
           </div>
         </div>
       )}
@@ -211,6 +228,25 @@ function Ownersection({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function OwnersLoading() {
+  return (
+    <div className="border border-(--color-border) rounded-lg overflow-hidden bg-(--color-card) font-mono text-[14px]">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className={`flex items-center gap-3 px-[14px] py-[18px] ${i > 0 ? "border-t border-(--color-border)" : ""}`}
+        >
+          <div className="w-2 h-2 rounded bg-(--color-border) animate-pulse" />
+          <div className="flex flex-col gap-1.5">
+            <SkelBar className="w-[120px] h-[13px]" />
+            <SkelBar className="w-[50px] h-[11px]" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
