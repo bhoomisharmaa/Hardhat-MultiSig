@@ -19,6 +19,7 @@ import { TransactionSVG } from "@/utils/svgs";
 import { useRouter } from "next/navigation";
 import TransactionsSection from "@/utils/TransactionsSection";
 import Loading from "@/components/Loading";
+import SkelBar from "@/utils/SkelBar";
 
 type Transaction = [
   Address,
@@ -43,7 +44,11 @@ export default function Transaction() {
     showToast: showCreateTransactionToast,
   } = useToast();
 
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+  const {
+    data: ownerStatus,
+    refetch: refetchOwnerStatus,
+    isLoading: isLoadingOwnerStatus,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerStatus",
     args: [connectedUserAddress],
@@ -51,31 +56,41 @@ export default function Transaction() {
     query: { enabled: !!connectedUserAddress },
   });
 
-  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+  const {
+    data: threshold,
+    refetch: refetchThreshold,
+    isLoading: isLoadingThreshold,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getApprovalThreshold",
     chainId,
   });
 
-  const { data: transactionCount, refetch: refetchTransactionCount } =
-    useReadContract({
-      ...contractConfig,
-      functionName: "getTransactionCount",
-      chainId,
-    });
+  const {
+    data: transactionCount,
+    refetch: refetchTransactionCount,
+    isLoading: isLoadingTransactionCount,
+  } = useReadContract({
+    ...contractConfig,
+    functionName: "getTransactionCount",
+    chainId,
+  });
 
-  const { data: rawTransactions, refetch: refetchRawTransactions } =
-    useReadContracts({
-      contracts: Array.from(
-        { length: transactionCount ? Number(transactionCount) : 0 },
-        (_, i) => ({
-          ...contractConfig,
-          functionName: "getTransaction",
-          args: [i],
-        }),
-      ),
-      query: { enabled: !!transactionCount && !!contractConfig?.address },
-    });
+  const {
+    data: rawTransactions,
+    refetch: refetchRawTransactions,
+    isLoading: isLoadingRawTransactions,
+  } = useReadContracts({
+    contracts: Array.from(
+      { length: transactionCount ? Number(transactionCount) : 0 },
+      (_, i) => ({
+        ...contractConfig,
+        functionName: "getTransaction",
+        args: [i],
+      }),
+    ),
+    query: { enabled: !!transactionCount && !!contractConfig?.address },
+  });
 
   useEffect(() => {
     const tempTransactions = rawTransactions?.map((tx) => {
@@ -128,7 +143,12 @@ export default function Transaction() {
               setIsProposeTransaction={setIsProposeTransaction}
               transactionCount={transactionCount as bigint}
             />
-            {transactionCount ? (
+            {isLoadingOwnerStatus ||
+            isLoadingRawTransactions ||
+            isLoadingThreshold ||
+            isLoadingTransactionCount ? (
+              <TransactionLoading />
+            ) : transactionCount ? (
               <TransactionsSection
                 connectedUserAddress={connectedUserAddress}
                 contractAbi={contractConfig?.abi}
@@ -215,6 +235,34 @@ function NoTransactionsSection({
       >
         Propose Transaction
       </button>
+    </div>
+  );
+}
+
+function TransactionLoading() {
+  return (
+    <div className="border border-(--color-border) rounded-lg overflow-hidden bg-(--color-card) font-mono text-[14px]">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className={`flex flex-col gap-3 px-[18px] py-4 ${i > 0 ? "border-t border-(--color-border)" : ""}`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <SkelBar className="w-[88px] h-[11px]" />
+              <SkelBar className="w-16 h-[19px]" />
+            </div>
+            <SkelBar className="w-[58px] h-5 rounded" />
+          </div>
+          <div className="flex gap-3 items-center xs:justify-between pt-3 border-t border-(--color-border)">
+            <div className="flex gap-1">
+              <div className="w-[22px] h-[22px] rounded bg-(--color-bg) border border-(--color-border)" />
+              <div className="w-[22px] h-[22px] rounded bg-(--color-bg) border border-(--color-border)" />
+            </div>
+            <SkelBar className="w-[46px] h-[11px]" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
