@@ -15,6 +15,7 @@ import { config } from "@/utils/wagmiConfig";
 import { useToast } from "@/utils/hooks/useToast";
 import SideBar from "@/components/SideBar";
 import Loading from "@/components/Loading";
+import SkelBar from "@/utils/SkelBar";
 
 function shortAddr(address: string) {
   return address.slice(0, 6) + "…" + address.slice(-4);
@@ -26,19 +27,31 @@ export default function Settings() {
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
 
-  const { data: ownersCount, refetch: refetchOwnersCount } = useReadContract({
+  const {
+    data: ownersCount,
+    refetch: refetchOwnersCount,
+    isLoading: isLoadingOwnersCount,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerCount",
     chainId,
   });
 
-  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+  const {
+    data: threshold,
+    refetch: refetchThreshold,
+    isLoading: isLoadingThreshold,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getApprovalThreshold",
     chainId,
   });
 
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+  const {
+    data: ownerStatus,
+    refetch: refetchOwnerStatus,
+    isLoading: isLoadingOwnerStatus,
+  } = useReadContract({
     ...contractConfig,
     functionName: "getOwnerStatus",
     args: [connectedUserAddress],
@@ -57,7 +70,7 @@ export default function Settings() {
   }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
-    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+    if ((!isLoadingOwnerStatus && ownerStatus !== 2) || !connectedUserAddress) {
       router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
@@ -68,7 +81,7 @@ export default function Settings() {
     },
   });
 
-  if (!contractConfig || !ownerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus) {
     return <Loading />;
   }
 
@@ -85,19 +98,18 @@ export default function Settings() {
               Settings
             </h1>
           </div>
-
           <ContractSection
             contractAddress={contractConfig?.address}
             ownersCount={ownersCount as bigint}
             threshold={threshold as bigint}
+            isLoadingOwnersCount={isLoadingOwnersCount}
+            isLoadingThreshold={isLoadingThreshold}
           />
-
           <YouSection
             contractAddress={contractConfig?.address}
             contractAbi={contractConfig?.abi}
             connectedUserAddress={connectedUserAddress}
           />
-
           <DangerZone />
         </div>
       </div>
@@ -109,10 +121,14 @@ function ContractSection({
   contractAddress,
   threshold,
   ownersCount,
+  isLoadingThreshold,
+  isLoadingOwnersCount,
 }: {
   contractAddress: Address | undefined;
   threshold: bigint;
   ownersCount: bigint;
+  isLoadingThreshold: boolean;
+  isLoadingOwnersCount: boolean;
 }) {
   const rows = [
     {
@@ -123,11 +139,23 @@ function ContractSection({
     { label: "Network", value: "Sepolia testnet", mono: false },
     {
       label: "Threshold",
-      value: `${threshold} of ${ownersCount}`,
+      value: isLoadingThreshold ? (
+        <SkelBar className="w-[44px] h-[12px]" />
+      ) : (
+        `${threshold} of ${ownersCount}`
+      ),
       mono: false,
     },
     { label: "Formula", value: "ceil(accepted × 80%)", mono: true },
-    { label: "Total owners", value: `${ownersCount}`, mono: false },
+    {
+      label: "Total owners",
+      value: isLoadingOwnersCount ? (
+        <SkelBar className="w-[16px] h-[12px]" />
+      ) : (
+        `${ownersCount}`
+      ),
+      mono: false,
+    },
   ];
 
   return (
