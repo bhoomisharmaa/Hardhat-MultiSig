@@ -18,6 +18,7 @@ import { writeContract } from "viem/actions";
 import { TransactionSVG } from "@/utils/svgs";
 import { useRouter } from "next/navigation";
 import TransactionsSection from "@/utils/TransactionsSection";
+import Loading from "@/components/Loading";
 
 type Transaction = [
   Address,
@@ -96,8 +97,8 @@ export default function Transaction() {
   }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
-    if (!connectedUserAddress || ownerStatus != 2) {
-      router.replace("/auth");
+    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+      router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
 
@@ -106,6 +107,9 @@ export default function Transaction() {
       refetchData();
     },
   });
+  if (!contractConfig || !ownerStatus) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">

@@ -16,6 +16,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import InviteOwner from "@/utils/InviteOwner";
+import Loading from "@/components/Loading";
 
 export default function Owners() {
   const { address: connectedUserAddress } = useAccount();
@@ -60,8 +61,8 @@ export default function Owners() {
   }, [connectedUserAddress, contractConfig, chainId]);
 
   useEffect(() => {
-    if (!connectedUserAddress || ownerStatus != 2) {
-      router.replace("/auth");
+    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+      router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
 
@@ -70,6 +71,10 @@ export default function Owners() {
       refetchData();
     },
   });
+
+  if (!contractConfig || !ownerStatus) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">

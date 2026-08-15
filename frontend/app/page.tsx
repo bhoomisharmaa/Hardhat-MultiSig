@@ -24,6 +24,7 @@ import { Abi, Address, formatEther } from "viem";
 import { useToast } from "@/utils/hooks/useToast";
 import ProposeTransaction from "@/utils/ProposeTransaction";
 import TransactionsSection from "@/utils/TransactionsSection";
+import Loading from "@/components/Loading";
 
 type Transaction = [
   Address,
@@ -37,7 +38,7 @@ type Transaction = [
 ];
 
 export default function Home() {
-  const { address: connectedUserAddress } = useAccount();
+  const { address: connectedUserAddress, isConnecting } = useAccount();
   const router = useRouter();
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
@@ -123,7 +124,7 @@ export default function Home() {
   }, [connectedUserAddress, chainId, contractConfig]);
 
   useEffect(() => {
-    if (!connectedUserAddress || ownerStatus !== 2) {
+    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
       router.push("/auth");
     }
   }, [connectedUserAddress, ownerStatus]);
@@ -133,6 +134,10 @@ export default function Home() {
       refetchData();
     },
   });
+
+  if (!contractConfig || !ownerStatus) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full w-full">

@@ -21,6 +21,7 @@ import {
 } from "wagmi";
 import { config } from "@/utils/wagmiConfig";
 import { wagmiContractConfig } from "@/utils/contractConfig";
+import Loading from "@/components/Loading";
 
 export default function AuthPage() {
   const [acceptedOwners, setAcceptedOwners] = useState<Number>();
@@ -106,6 +107,10 @@ export default function AuthPage() {
   useEffect(() => {
     calculateAcceptedOwners();
   }, [owners, chainId, contractConfig]);
+
+  if (!contractConfig) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full w-full dark:bg-(--color-bg)">

@@ -14,6 +14,7 @@ import { wagmiContractConfig } from "@/utils/contractConfig";
 import { config } from "@/utils/wagmiConfig";
 import { useToast } from "@/utils/hooks/useToast";
 import SideBar from "@/components/SideBar";
+import Loading from "@/components/Loading";
 
 function shortAddr(address: string) {
   return address.slice(0, 6) + "…" + address.slice(-4);
@@ -21,9 +22,55 @@ function shortAddr(address: string) {
 
 export default function Settings() {
   const { address: connectedUserAddress } = useAccount();
-
+  const router = useRouter();
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
+
+  const { data: ownersCount, refetch: refetchOwnersCount } = useReadContract({
+    ...contractConfig,
+    functionName: "getOwnerCount",
+    chainId,
+  });
+
+  const { data: threshold, refetch: refetchThreshold } = useReadContract({
+    ...contractConfig,
+    functionName: "getApprovalThreshold",
+    chainId,
+  });
+
+  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
+    ...contractConfig,
+    functionName: "getOwnerStatus",
+    args: [connectedUserAddress],
+    chainId,
+    query: { enabled: !!connectedUserAddress },
+  });
+
+  const refetchData = () => {
+    refetchOwnersCount();
+    refetchThreshold();
+    refetchOwnerStatus();
+  };
+
+  useEffect(() => {
+    refetchData();
+  }, [connectedUserAddress, contractConfig, chainId]);
+
+  useEffect(() => {
+    if ((ownerStatus && ownerStatus !== 2) || !connectedUserAddress) {
+      router.push("/auth");
+    }
+  }, [connectedUserAddress, ownerStatus]);
+
+  useWatchBlockNumber({
+    onBlockNumber() {
+      refetchData();
+    },
+  });
+
+  if (!contractConfig || !ownerStatus) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full w-full flex flex-col ml:flex-row bg-(--color-bg)">
@@ -41,9 +88,8 @@ export default function Settings() {
 
           <ContractSection
             contractAddress={contractConfig?.address}
-            chainId={chainId}
-            contractAbi={contractConfig?.abi}
-            connectedUserAddress={connectedUserAddress}
+            ownersCount={ownersCount as bigint}
+            threshold={threshold as bigint}
           />
 
           <YouSection
@@ -61,39 +107,13 @@ export default function Settings() {
 
 function ContractSection({
   contractAddress,
-  contractAbi,
-  chainId,
-  connectedUserAddress,
+  threshold,
+  ownersCount,
 }: {
   contractAddress: Address | undefined;
-  contractAbi: Abi | undefined;
-  chainId: number;
-  connectedUserAddress: Address | undefined;
+  threshold: bigint;
+  ownersCount: bigint;
 }) {
-  const router = useRouter();
-  const { data: ownersCount, refetch: refetchOwnersCount } = useReadContract({
-    address: contractAddress,
-    abi: contractAbi,
-    functionName: "getOwnerCount",
-    chainId,
-  });
-
-  const { data: threshold, refetch: refetchThreshold } = useReadContract({
-    address: contractAddress,
-    abi: contractAbi,
-    functionName: "getApprovalThreshold",
-    chainId,
-  });
-
-  const { data: ownerStatus, refetch: refetchOwnerStatus } = useReadContract({
-    address: contractAddress,
-    abi: contractAbi,
-    functionName: "getOwnerStatus",
-    args: [connectedUserAddress],
-    chainId,
-    query: { enabled: !!connectedUserAddress },
-  });
-
   const rows = [
     {
       label: "Address",
@@ -109,28 +129,6 @@ function ContractSection({
     { label: "Formula", value: "ceil(accepted × 80%)", mono: true },
     { label: "Total owners", value: `${ownersCount}`, mono: false },
   ];
-
-  const refetchData = () => {
-    refetchOwnersCount();
-    refetchThreshold();
-    refetchOwnerStatus();
-  };
-
-  useEffect(() => {
-    refetchData();
-  }, [contractAddress, contractAbi, chainId]);
-
-  useEffect(() => {
-    if (!connectedUserAddress || ownerStatus != 2) {
-      router.replace("/auth");
-    }
-  }, [connectedUserAddress, ownerStatus]);
-
-  useWatchBlockNumber({
-    onBlockNumber() {
-      refetchData();
-    },
-  });
 
   return (
     <div className="flex flex-col gap-3">
