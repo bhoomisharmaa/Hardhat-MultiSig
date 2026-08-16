@@ -11,11 +11,13 @@ export default function ProposeTransaction({
   contractAbi,
   showCreateTransactionToast,
   setIsProposeTransaction,
+  setIsLoading,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
   showCreateTransactionToast: (message: string) => void;
   setIsProposeTransaction: Dispatch<SetStateAction<boolean>>;
+  setIsLoading: (message: boolean) => void;
 }) {
   const [recipient, setRecipient] = useState<Address>();
   const [amount, setAmount] = useState("");
@@ -76,6 +78,10 @@ export default function ProposeTransaction({
       args: [parseEther(amount), recipient],
     });
   };
+
+  useEffect(() => {
+    setIsLoading(isPending);
+  }, [isPending]);
 
   useEffect(() => {
     if (writeContractIsSuccess) {

@@ -49,6 +49,7 @@ export default function Home() {
   } = useToast();
   const [isProposeTransaction, setIsProposeTransaction] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     data: ownerStatus,
@@ -158,7 +159,7 @@ export default function Home() {
     },
   });
 
-  if (!contractConfig || isLoadingOwnerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus || isLoading) {
     return <Loading />;
   }
 
@@ -172,6 +173,7 @@ export default function Home() {
             contractAbi={contractConfig?.abi}
             showCreateTransactionToast={showCreateTransactionToast}
             setIsProposeTransaction={setIsProposeTransaction}
+            setIsLoading={setIsLoading}
           />
         ) : (
           <Overview
@@ -196,6 +198,7 @@ export default function Home() {
               isLoadingThreshold ||
               isLoadingTransactionCount
             }
+            setIsLoading={setIsLoading}
           />
         )}
         <div className="fixed bottom-5 right-5 flex flex-col gap-2">
@@ -225,6 +228,7 @@ function Overview({
   threshold,
   connectedUserAddress,
   isLoading,
+  setIsLoading,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
@@ -237,6 +241,7 @@ function Overview({
   threshold: bigint;
   connectedUserAddress: Address | undefined;
   isLoading: boolean;
+  setIsLoading: (message: boolean) => void;
 }) {
   return (
     <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
@@ -265,12 +270,14 @@ function Overview({
               contractAddress={contractAddress}
               threshold={threshold as bigint}
               transactions={transactions}
+              setIsLoading={setIsLoading}
             />
             <OverviewOwners
               owners={owners}
               ownersStatus={ownersStatus}
               contractAddress={contractAddress}
               contractAbi={contractAbi}
+              setIsLoading={setIsLoading}
             />
           </>
         )}
@@ -414,12 +421,14 @@ function OverviewTransaction({
   contractAbi,
   threshold,
   connectedUserAddress,
+  setIsLoading,
 }: {
   transactions: Transaction[] | undefined;
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
   threshold: bigint;
   connectedUserAddress: Address | undefined;
+  setIsLoading: (message: boolean) => void;
 }) {
   const router = useRouter();
   return (
@@ -444,6 +453,7 @@ function OverviewTransaction({
           contractAddress={contractAddress}
           threshold={threshold as bigint}
           transactions={transactions}
+          setIsLoading={setIsLoading}
         />
       ) : (
         <div className="border border-dashed border-(--color-border2) rounded-lg p-8 text-center">
@@ -464,13 +474,15 @@ function OverviewOwners({
   ownersStatus,
   contractAddress,
   contractAbi,
+  setIsLoading,
 }: {
   owners: Address[] | undefined;
   ownersStatus: number[] | undefined;
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
+  setIsLoading: (message: boolean) => void;
 }) {
-  const { writeContract, isSuccess } = useWriteContract();
+  const { writeContract, isSuccess, isPending } = useWriteContract();
   const { toasts, showToast } = useToast();
   const router = useRouter();
 
@@ -481,11 +493,13 @@ function OverviewOwners({
       functionName: "removeInvitedOwner",
       args: [address],
     });
+    setIsLoading(isPending);
   };
 
   useEffect(() => {
+    if (!isPending) setIsLoading(false);
     if (isSuccess) showToast("Invitation removed");
-  }, [isSuccess]);
+  }, [isSuccess, isPending]);
 
   return (
     <div className="flex flex-col gap-3">

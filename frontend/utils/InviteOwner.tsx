@@ -8,12 +8,14 @@ export default function InviteOwner({
   showInviteOwnerToast,
   setIsInviteOwner,
   owners,
+  setIsLoading,
 }: {
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
   showInviteOwnerToast: (message: string) => void;
   setIsInviteOwner: Dispatch<SetStateAction<boolean>>;
   owners: Address[] | undefined;
+  setIsLoading: (message: boolean) => void;
 }) {
   const [address, setAddress] = useState<Address>();
   const [addressError, setAddressError] = useState("");
@@ -55,6 +57,10 @@ export default function InviteOwner({
       args: [address],
     });
   };
+
+  useEffect(() => {
+    setIsLoading(isPending);
+  }, [isPending]);
 
   useEffect(() => {
     if (writeContractIsSuccess) {

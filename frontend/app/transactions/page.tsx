@@ -39,6 +39,7 @@ export default function Transaction() {
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
   const [isProposeTransaction, setIsProposeTransaction] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>();
+  const [isLoading, setIsLoading] = useState(false);
   const {
     toasts: createTransactionToast,
     showToast: showCreateTransactionToast,
@@ -122,7 +123,7 @@ export default function Transaction() {
       refetchData();
     },
   });
-  if (!contractConfig || isLoadingOwnerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus || isLoading) {
     return <Loading />;
   }
 
@@ -135,6 +136,7 @@ export default function Transaction() {
           contractAbi={contractConfig?.abi}
           showCreateTransactionToast={showCreateTransactionToast}
           setIsProposeTransaction={setIsProposeTransaction}
+          setIsLoading={setIsLoading}
         />
       ) : (
         <div className="h-screen w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
@@ -155,6 +157,7 @@ export default function Transaction() {
                 contractAddress={contractConfig?.address}
                 threshold={threshold as bigint}
                 transactions={transactions}
+                setIsLoading={setIsLoading}
               />
             ) : (
               <NoTransactionsSection

@@ -25,6 +25,7 @@ export default function Owners() {
   const chainId = useChainId({ config });
   const contractConfig = chainId ? wagmiContractConfig(chainId) : undefined;
   const [isInviteOwner, setIsInviteOwner] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toasts: inviteOwnerToast, showToast: showInviteOwnerToast } =
     useToast();
 
@@ -85,7 +86,7 @@ export default function Owners() {
     },
   });
 
-  if (!contractConfig || isLoadingOwnerStatus) {
+  if (!contractConfig || isLoadingOwnerStatus || isLoading) {
     return <Loading />;
   }
 
@@ -99,6 +100,7 @@ export default function Owners() {
           showInviteOwnerToast={showInviteOwnerToast}
           setIsInviteOwner={setIsInviteOwner}
           owners={owners as Address[] | undefined}
+          setIsLoading={setIsLoading}
         />
       ) : (
         <div className="h-full w-full max-w-[960px] pt-6 pb-17.5 px-4.5 ml:pt-10 ml:pb-20 ml:px-12">
@@ -112,6 +114,7 @@ export default function Owners() {
                 contractAddress={contractConfig?.address}
                 owners={owners as Address[] | undefined}
                 ownersStatus={statuses?.map((s) => s.result as number)}
+                setIsLoading={setIsLoading}
               />
             )}
           </div>
@@ -164,13 +167,15 @@ function Ownersection({
   ownersStatus,
   contractAddress,
   contractAbi,
+  setIsLoading,
 }: {
   owners: Address[] | undefined;
   ownersStatus: number[] | undefined;
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
+  setIsLoading: (message: boolean) => void;
 }) {
-  const { writeContract, isSuccess } = useWriteContract();
+  const { writeContract, isSuccess, isPending } = useWriteContract();
   const { toasts, showToast } = useToast();
 
   const removeInvitedOwner = async (address: Address) => {
@@ -181,6 +186,10 @@ function Ownersection({
       args: [address],
     });
   };
+
+  useEffect(() => {
+    setIsLoading(isPending);
+  }, [isPending]);
 
   useEffect(() => {
     if (isSuccess) showToast("Invitation removed");

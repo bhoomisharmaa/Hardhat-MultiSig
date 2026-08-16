@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Abi, Address, formatEther } from "viem";
 import { useWriteContract } from "wagmi";
 
@@ -18,14 +19,16 @@ export default function TransactionsSection({
   contractAbi,
   threshold,
   connectedUserAddress,
+  setIsLoading,
 }: {
   transactions: Transaction[] | undefined;
   contractAddress: Address | undefined;
   contractAbi: Abi | undefined;
   threshold: bigint;
   connectedUserAddress: Address | undefined;
+  setIsLoading: (message: boolean) => void;
 }) {
-  const { writeContract, isSuccess } = useWriteContract();
+  const { writeContract, isSuccess, isPending } = useWriteContract();
 
   const approveTransaction = async (txnIndex: bigint) => {
     writeContract({
@@ -44,6 +47,10 @@ export default function TransactionsSection({
       args: [txnIndex],
     });
   };
+
+  useEffect(() => {
+    setIsLoading(isPending);
+  }, [isPending]);
 
   return (
     <div className="flex flex-col gap-3">
