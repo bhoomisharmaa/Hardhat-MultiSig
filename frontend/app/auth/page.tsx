@@ -126,7 +126,6 @@ export default function AuthPage() {
 
   if (
     !contractConfig ||
-    isLoadingOwnerStatus ||
     isLoadingOwners ||
     isLoadingStatuses ||
     isLoadingThreshold
